@@ -386,6 +386,37 @@ function getValueAtPath(path) {
   for (var i = 0; i < parts.length; i++) cur = cur[parts[i]];
   return cur;
 }
+function getOldValueAtPath(path) {
+  if (!state.savedSnapshot) return undefined;
+  if (path === 'root') return state.savedSnapshot;
+  var parts = parsePath(path), cur = state.savedSnapshot;
+  for (var i = 0; i < parts.length; i++) {
+    if (cur === undefined || cur === null) return undefined;
+    cur = cur[parts[i]];
+  }
+  return cur;
+}
+function getRemovedChildren(parentPath, parentValue) {
+  var result = [];
+  if (!state.savedSnapshot) return result;
+  var oldVal = getOldValueAtPath(parentPath);
+  if (oldVal === undefined || oldVal === null || typeof oldVal !== 'object') return result;
+  if (Array.isArray(oldVal)) {
+    var newLen = Array.isArray(parentValue) ? parentValue.length : 0;
+    for (var i = newLen; i < oldVal.length; i++) {
+      result.push({key: i, value: oldVal[i]});
+    }
+  } else {
+    var oldKeys = Object.keys(oldVal);
+    for (var j = 0; j < oldKeys.length; j++) {
+      var k = oldKeys[j];
+      if (!parentValue || !(k in parentValue)) {
+        result.push({key: k, value: oldVal[k]});
+      }
+    }
+  }
+  return result;
+}
 function setValueAtPath(path, value) {
   if (path === 'root') { state.data = value; return; }
   var parts = parsePath(path), last = parts.pop(), cur = state.data;
@@ -452,18 +483,24 @@ function snapshot() {
     data: deepClone(state.data),
     expanded: Array.from(state.expanded),
     schema: state.schema ? deepClone(state.schema) : null,
+    schemaSyntaxError: state.schemaSyntaxError || null,
     schemaText: schemaInputEl.value,
-    search: searchInputEl.value
+    search: searchInputEl.value,
+    savedSnapshot: state.savedSnapshot ? deepClone(state.savedSnapshot) : null
   };
 }
 function restoreSnapshot(snap) {
   state.data = deepClone(snap.data);
   state.expanded = new Set(snap.expanded || ['root']);
   state.schema = snap.schema ? deepClone(snap.schema) : null;
+  state.schemaSyntaxError = snap.schemaSyntaxError || null;
   schemaInputEl.value = snap.schemaText || '';
   if (snap.search !== undefined) searchInputEl.value = snap.search;
-  if (state.schema) runSchemaValidation(false);
-  else { state.schemaErrors.clear(); state.schemaSyntaxError = null; }
+  state.savedSnapshot = snap.savedSnapshot ? deepClone(snap.savedSnapshot) : null;
+  if (state.schema && !state.schemaSyntaxError) runSchemaValidation(false);
+  else { state.schemaErrors.clear(); }
+  state.searchMatches = [];
+  state.searchCurrentIdx = -1;
 }
 function pushHistory(label) {
   if (suppressHistory) return;
@@ -534,16 +571,25 @@ function applySearchIfNeeded() {
   else { state.searchMatches = []; state.searchCurrentIdx = -1; }
 }
 
-function setData(data, withHistory, label) {
-  if (withHistory) pushHistory(label || '加载数据');
-  else {
-    state.data = data;
-    state.expanded = new Set(['root']);
+function setData(data, label, resetHistory) {
+  if (resetHistory) {
+    history.stack = [];
+    history.index = -1;
+    state.savedSnapshot = null;
+    state.schemaErrors.clear();
+    state.schemaSyntaxError = null;
+    state.searchMatches = [];
+    state.searchCurrentIdx = -1;
   }
+  state.data = data;
+  state.expanded = new Set(['root']);
   expandAllChildren('root', state.data);
   render(); syncRawJson();
-  if (state.schema) runSchemaValidation(false);
+  if (state.schema && !state.schemaSyntaxError) runSchemaValidation(false);
+  else state.schemaErrors.clear();
   computeDiff();
+  pushHistory(label || '加载数据');
+  if (resetHistory) { updateHistoryUI(); updateUndoRedoButtons(); }
 }
 
 function render() {
@@ -555,7 +601,7 @@ function render() {
   updateIssuesList();
 }
 
-function renderNode(value, path, key, parent, isRoot) {
+function renderNode(value, path, key, parent, isRoot, isRemoved) {
   var type = getType(value);
   var li = document.createElement('li');
   var nodeDiv = document.createElement('div');
@@ -564,7 +610,7 @@ function renderNode(value, path, key, parent, isRoot) {
   nodeDiv.dataset.type = type;
   if (key !== null) nodeDiv.dataset.key = String(key);
 
-  var diff = state.diffMap.get(path);
+  var diff = isRemoved ? 'removed' : state.diffMap.get(path);
   if (diff) {
     nodeDiv.classList.add('diff-' + diff);
     var marker = document.createElement('div');
@@ -579,7 +625,9 @@ function renderNode(value, path, key, parent, isRoot) {
   toggle.className = 'toggle';
   var hasChildren = type === 'object' || type === 'array';
   var childCount = hasChildren ? (Array.isArray(value) ? value.length : Object.keys(value).length) : 0;
-  if (!hasChildren || childCount === 0) toggle.classList.add('empty');
+  var removedChildren = !isRemoved && hasChildren ? getRemovedChildren(path, value) : [];
+  var totalChildCount = childCount + removedChildren.length;
+  if (!hasChildren || totalChildCount === 0) toggle.classList.add('empty');
   var expanded = state.expanded.has(path);
   if (expanded && hasChildren) toggle.classList.add('expanded');
   toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
@@ -591,7 +639,7 @@ function renderNode(value, path, key, parent, isRoot) {
     keyEl.className = 'key' + (isArrayIdx ? ' array-index' : '');
     keyEl.textContent = String(key);
     keyEl.dataset.path = path;
-    if (!isArrayIdx) {
+    if (!isArrayIdx && !isRemoved) {
       (function(k, p, nd) {
         keyEl.addEventListener('dblclick', function(e) {
           e.stopPropagation();
@@ -622,35 +670,45 @@ function renderNode(value, path, key, parent, isRoot) {
     valueEl.className = 'value ' + type;
     valueEl.textContent = type === 'string' ? JSON.stringify(value) : String(value);
     valueEl.dataset.path = path;
-    (function(v, t, p) {
-      valueEl.addEventListener('dblclick', function(e) {
-        e.stopPropagation();
-        startEditValue(valueEl, v, t, p);
-      });
-    })(value, type, path);
+    if (!isRemoved) {
+      (function(v, t, p) {
+        valueEl.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          startEditValue(valueEl, v, t, p);
+        });
+      })(value, type, path);
+    }
     row.appendChild(valueEl);
   }
 
-  var schemaErrs = state.schemaErrors.get(path);
-  if (schemaErrs && schemaErrs.length > 0) {
-    var badge = document.createElement('span');
-    var hasError = schemaErrs.some(function(e){return e.severity==='error'});
-    badge.className = 'schema-badge ' + (hasError ? 'error' : 'warning');
-    badge.textContent = '!';
-    badge.title = schemaErrs.map(function(e){return e.message}).join('\n');
-    row.appendChild(badge);
+  if (!isRemoved) {
+    var schemaErrs = state.schemaErrors.get(path);
+    if (schemaErrs && schemaErrs.length > 0) {
+      var badge = document.createElement('span');
+      var hasError = schemaErrs.some(function(e){return e.severity==='error'});
+      badge.className = 'schema-badge ' + (hasError ? 'error' : 'warning');
+      badge.textContent = '!';
+      badge.title = schemaErrs.map(function(e){return e.message}).join('\n');
+      row.appendChild(badge);
+    }
   }
 
   nodeDiv.appendChild(row);
   li.appendChild(nodeDiv);
 
-  if (hasChildren && expanded && childCount > 0) {
+  if (hasChildren && expanded && totalChildCount > 0) {
     var ul = document.createElement('ul');
     var entries;
     if (Array.isArray(value)) entries = value.map(function(v,i){return [i,v]});
     else entries = Object.keys(value).map(function(k){return [k, value[k]]});
     for (var ei = 0; ei < entries.length; ei++) {
-      renderNode(entries[ei][1], buildPath(path, entries[ei][0]), entries[ei][0], ul, false);
+      renderNode(entries[ei][1], buildPath(path, entries[ei][0]), entries[ei][0], ul, false, false);
+    }
+    if (!isRemoved && removedChildren.length > 0) {
+      for (var ri = 0; ri < removedChildren.length; ri++) {
+        var rc = removedChildren[ri];
+        renderNode(rc.value, buildPath(path, rc.key), rc.key, ul, false, true);
+      }
     }
     li.appendChild(ul);
   }
@@ -665,14 +723,16 @@ function renderNode(value, path, key, parent, isRoot) {
         else state.expanded.add(p);
         render();
       });
-    })(path, childCount);
+    })(path, totalChildCount);
   }
 
-  setupDragAndDrop(nodeDiv, path, type, isRoot);
-  nodeDiv.addEventListener('contextmenu', function(e) {
-    e.preventDefault(); e.stopPropagation();
-    showContextMenu(e.clientX, e.clientY, path, type, isRoot, typeof key === 'number');
-  });
+  if (!isRemoved) {
+    setupDragAndDrop(nodeDiv, path, type, isRoot);
+    nodeDiv.addEventListener('contextmenu', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      showContextMenu(e.clientX, e.clientY, path, type, isRoot, typeof key === 'number');
+    });
+  }
   return li;
 }
 
@@ -1117,7 +1177,7 @@ function updateIssuesList() {
   var html = '';
   for (var i = 0; i < all.length; i++) {
     var e = all[i];
-    html += '<div class="schema-issue' + (e.severity === 'warning' ? ' warning' : '') + '" data-path="' + CSS.escape(e.path) + '">' +
+    html += '<div class="schema-issue' + (e.severity === 'warning' ? ' warning' : '') + '" data-path="' + escapeHtml(e.path) + '">' +
       '<div class="si-msg">' + escapeHtml(e.message) + '</div>' +
       '<div class="si-path">' + escapeHtml(pathToDisplay(e.path)) + '</div></div>';
   }
@@ -1126,6 +1186,7 @@ function updateIssuesList() {
     el.addEventListener('click', function() {
       var p = el.dataset.path;
       navigateToPath(p);
+      closeAllPanels();
     });
   });
 }
@@ -1200,7 +1261,7 @@ function applyDiffHighlights() {
   });
   if (!state.savedSnapshot) return;
   state.diffMap.forEach(function(type, path) {
-    var n = document.querySelector('.tree-node[data-path="' + CSS.escape(path) + '"]');
+    var n = getNodeByPath(path);
     if (!n) return;
     n.classList.add('diff-' + type);
     if (!n.querySelector('.diff-marker')) {
@@ -1229,13 +1290,13 @@ function updateDiffList() {
   for (var i = 0; i < entries.length; i++) {
     var e = entries[i];
     var label = e.type === 'added' ? '新增' : (e.type === 'modified' ? '修改' : '删除');
-    html += '<div class="diff-panel-item ' + e.type + '" data-path="' + CSS.escape(e.path) + '">' +
+    html += '<div class="diff-panel-item ' + e.type + '" data-path="' + escapeHtml(e.path) + '">' +
       '<span class="dp-type">' + label + '</span>' +
       '<span class="dp-path">' + escapeHtml(pathToDisplay(e.path)) + '</span></div>';
   }
   diffBodyEl.innerHTML = html;
   diffBodyEl.querySelectorAll('.diff-panel-item').forEach(function(el) {
-    el.addEventListener('click', function() { navigateToPath(el.dataset.path); });
+    el.addEventListener('click', function() { navigateToPath(el.dataset.path); closeAllPanels(); });
   });
 }
 
@@ -1291,19 +1352,26 @@ function applySearchHighlights() {
   });
   if (state.searchMatches.length === 0) return;
   for (var i = 0; i < state.searchMatches.length; i++) {
-    var node = document.querySelector('.tree-node[data-path="' + CSS.escape(state.searchMatches[i].path) + '"]');
+    var node = getNodeByPath(state.searchMatches[i].path);
     if (node) node.classList.add('search-highlight');
   }
   if (state.searchCurrentIdx >= 0 && state.searchCurrentIdx < state.searchMatches.length) {
-    var cur = document.querySelector('.tree-node[data-path="' + CSS.escape(state.searchMatches[state.searchCurrentIdx].path) + '"]');
+    var cur = getNodeByPath(state.searchMatches[state.searchCurrentIdx].path);
     if (cur) { cur.classList.add('search-highlight-current'); cur.scrollIntoView({behavior:'smooth', block:'center'}); }
   }
+}
+function getNodeByPath(path) {
+  var nodes = document.querySelectorAll('.tree-node');
+  for (var i = 0; i < nodes.length; i++) {
+    if (nodes[i].dataset.path === path) return nodes[i];
+  }
+  return null;
 }
 function navigateToPath(path) {
   expandToPath(path);
   render();
   requestAnimationFrame(function() {
-    var node = document.querySelector('.tree-node[data-path="' + CSS.escape(path) + '"]');
+    var node = getNodeByPath(path);
     if (node) {
       node.scrollIntoView({behavior:'smooth', block:'center'});
       node.style.transition = 'background .3s';
@@ -1379,17 +1447,19 @@ function bindEvents() {
   });
   document.getElementById('btn-format').addEventListener('click', function() {
     try {
+      var oldVal = rawJsonEl.value;
       state.data = JSON.parse(rawJsonEl.value);
       state.expanded = new Set(['root']); expandAllChildren('root', state.data);
       render(); syncRawJson(); showTemp('✓ 已格式化', true);
+      if (oldVal !== rawJsonEl.value) pushHistory('格式化 JSON');
     } catch(err) { showErrorBanner('无法格式化: ' + err.message, 'root'); }
   });
   document.getElementById('btn-clear').addEventListener('click', function() {
     if (!confirm('确认清空所有数据?')) return;
-    setData({}, true, '清空数据');
+    setData({}, '清空数据', true);
   });
   document.getElementById('btn-sample').addEventListener('click', function() {
-    setData(JSON.parse(JSON.stringify(SAMPLE_JSON)), true, '加载示例数据');
+    setData(JSON.parse(JSON.stringify(SAMPLE_JSON)), '加载示例数据', true);
     showTemp('✓ 已加载示例数据（含特殊键名）', true);
   });
   document.getElementById('schema-toggle').addEventListener('click', function() {
@@ -1495,22 +1565,26 @@ function bindEvents() {
         if (isWorkspace) {
           var ws = JSON.parse(text);
           if (!ws || typeof ws !== 'object' || ws.__type !== 'json-workspace') throw new Error('无效的工作区文件');
-          suppressHistory = true;
+          history.stack = [];
+          history.index = -1;
           state.data = ws.data || {};
           state.expanded = new Set(ws.expanded || ['root']);
           state.schema = ws.schema || null;
+          state.schemaSyntaxError = null;
           schemaInputEl.value = ws.schemaText || '';
           searchInputEl.value = ws.search || '';
           state.savedSnapshot = ws.savedSnapshot || null;
-          suppressHistory = false;
-          pushHistory('加载工作区: ' + f.name);
+          state.schemaErrors.clear();
+          state.searchMatches = [];
+          state.searchCurrentIdx = -1;
           if (state.schema) runSchemaValidation(false);
-          else { state.schemaErrors.clear(); state.schemaSyntaxError = null; }
           render(); syncRawJson(); applySearchIfNeeded(); computeDiff();
+          pushHistory('加载工作区: ' + f.name);
+          updateHistoryUI(); updateUndoRedoButtons();
           showTemp('✓ 工作区已加载: ' + f.name, true);
         } else {
           var data = JSON.parse(text);
-          setData(data, true, '打开文件: ' + f.name);
+          setData(data, '打开文件: ' + f.name, true);
           showTemp('✓ 文件已加载: ' + f.name, true);
         }
       } catch(err) {
@@ -1575,7 +1649,7 @@ function bindEvents() {
 }
 
 function init() {
-  setData(JSON.parse(JSON.stringify(SAMPLE_JSON)), false);
+  setData(JSON.parse(JSON.stringify(SAMPLE_JSON)), '初始状态', true);
   bindEvents();
   updateHistoryUI();
   updateUndoRedoButtons();
