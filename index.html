@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON 可视化编辑器</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    background: #313244;
+    padding: 12px 20px;
+    border-bottom: 1px solid #45475a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #89b4fa;
+  }
+  .btn {
+    background: #45475a;
+    color: #cdd6f4;
+    border: 1px solid #585b70;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: #585b70; border-color: #7f849c; }
+  .btn-primary { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; }
+  .btn-primary:hover { background: #b4befe; border-color: #b4befe; }
+  .btn-danger { background: #f38ba8; color: #1e1e2e; border-color: #f38ba8; }
+  .btn-danger:hover { background: #eba0ac; border-color: #eba0ac; }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #tree-container {
+    flex: 1;
+    overflow: auto;
+    padding: 16px 20px;
+    min-height: 0;
+  }
+  .json-tree {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    user-select: none;
+  }
+  .json-tree ul {
+    list-style: none;
+    padding-left: 24px;
+    border-left: 1px dashed #45475a;
+    margin-left: 12px;
+  }
+  .json-tree > ul { padding-left: 0; border-left: none; margin-left: 0; }
+  .tree-node {
+    position: relative;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .tree-node:hover { background: rgba(137, 180, 250, 0.08); }
+  .tree-node.drag-over-top::before,
+  .tree-node.drag-over-bottom::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #89b4fa;
+    border-radius: 2px;
+  }
+  .tree-node.drag-over-top::before { top: 0; }
+  .tree-node.drag-over-bottom::after { bottom: 0; }
+  .tree-node.dragging { opacity: 0.4; }
+  .node-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    width: 100%;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    color: #7f849c;
+  }
+  .toggle:hover { background: #45475a; color: #cdd6f4; }
+  .toggle.empty { visibility: hidden; cursor: default; }
+  .toggle svg {
+    width: 12px;
+    height: 12px;
+    transition: transform 0.15s;
+  }
+  .toggle.expanded svg { transform: rotate(90deg); }
+  .key {
+    color: #f9e2af;
+    font-weight: 500;
+    cursor: default;
+  }
+  .key::after { content: ':'; color: #6c7086; margin-right: 6px; margin-left: 2px; }
+  .key, .value { padding: 2px 4px; border-radius: 3px; }
+  .value { cursor: pointer; }
+  .value:hover { background: rgba(137, 180, 250, 0.15); }
+  .value.string { color: #a6e3a1; }
+  .value.number { color: #fab387; }
+  .value.boolean { color: #cba6f7; font-weight: 600; }
+  .value.null { color: #f38ba8; font-style: italic; font-weight: 600; }
+  .value.object, .value.array { color: #89dceb; }
+  .value.error {
+    background: rgba(243, 139, 168, 0.25) !important;
+    outline: 1px solid #f38ba8;
+    animation: shake 0.3s;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+  }
+  .bracket { color: #89dceb; }
+  .bracket.object::before { content: '{'; }
+  .bracket.object::after { content: '}'; }
+  .bracket.array::before { content: '['; }
+  .bracket.array::after { content: ']'; }
+  .bracket.object.collapsed::after,
+  .bracket.array.collapsed::after { content: attr(data-count); margin-left: 2px; color: #6c7086; font-size: 12px; }
+  .bracket.collapsed::after { padding-right: 6px; }
+
+  .editable-input {
+    background: #313244;
+    border: 1px solid #89b4fa;
+    color: inherit;
+    font: inherit;
+    padding: 2px 6px;
+    border-radius: 4px;
+    outline: none;
+    min-width: 120px;
+  }
+  .editable-input:focus { box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.3); }
+  .editable-input.invalid {
+    border-color: #f38ba8;
+    background: rgba(243, 139, 168, 0.15);
+    box-shadow: 0 0 0 2px rgba(243, 139, 168, 0.2);
+  }
+  .type-selector {
+    background: #313244;
+    border: 1px solid #45475a;
+    color: #cdd6f4;
+    font: inherit;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 4px;
+    cursor: pointer;
+  }
+  .key-input {
+    background: #313244;
+    border: 1px solid #89b4fa;
+    color: #f9e2af;
+    font: inherit;
+    padding: 2px 6px;
+    border-radius: 4px;
+    outline: none;
+    width: 140px;
+  }
+  .key-input:focus { box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.3); }
+
+  .context-menu {
+    position: fixed;
+    background: #313244;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    padding: 6px;
+    min-width: 200px;
+    z-index: 10000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+  .context-menu-item {
+    padding: 8px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.1s;
+  }
+  .context-menu-item:hover { background: #45475a; }
+  .context-menu-item.danger { color: #f38ba8; }
+  .context-menu-item.danger:hover { background: rgba(243, 139, 168, 0.15); }
+  .context-menu-separator {
+    height: 1px;
+    background: #45475a;
+    margin: 4px 6px;
+  }
+  .context-menu-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .error-banner {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    background: #f38ba8;
+    color: #1e1e2e;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(243, 139, 168, 0.4);
+    animation: slideIn 0.3s;
+    max-width: 400px;
+    word-break: break-all;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .error-path {
+    font-family: "JetBrains Mono", monospace;
+    background: rgba(30, 30, 46, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+
+  footer {
+    background: #313244;
+    border-top: 1px solid #45475a;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    max-height: 40%;
+    min-height: 120px;
+  }
+  .footer-header {
+    padding: 8px 16px;
+    background: #1e1e2e;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #7f849c;
+    border-bottom: 1px solid #45475a;
+  }
+  .footer-header span { font-weight: 600; }
+  #raw-json {
+    flex: 1;
+    background: #181825;
+    color: #cdd6f4;
+    border: none;
+    padding: 16px 20px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    overflow: auto;
+    white-space: pre;
+  }
+  #raw-json:focus { background: #11111b; }
+  .resizer {
+    height: 4px;
+    cursor: ns-resize;
+    background: transparent;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .resizer:hover, .resizer.active { background: #89b4fa; }
+
+  .path-display {
+    font-size: 12px;
+    color: #7f849c;
+    margin-left: auto;
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6c7086;
+    gap: 16px;
+  }
+  .empty-state svg { width: 64px; height: 64px; opacity: 0.5; }
+  .empty-state p { font-size: 15px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📄 JSON 可视化编辑器</h1>
+  <button class="btn btn-primary" id="btn-expand-all">展开全部</button>
+  <button class="btn" id="btn-collapse-all">折叠全部</button>
+  <button class="btn" id="btn-format">格式化</button>
+  <button class="btn btn-danger" id="btn-clear">清空</button>
+  <button class="btn" id="btn-sample">加载示例</button>
+  <span class="path-display" id="current-path">根对象</span>
+</header>
+
+<main>
+  <div id="tree-container">
+    <div class="json-tree" id="json-tree"></div>
+  </div>
+  <div class="resizer" id="resizer"></div>
+  <footer>
+    <div class="footer-header">
+      <span>📝 原始 JSON（可在此直接编辑同步到上方）</span>
+      <span id="json-stats">-</span>
+    </div>
+    <textarea id="raw-json" spellcheck="false" placeholder='在此粘贴 JSON...'></textarea>
+  </footer>
+</main>
+
+<div class="context-menu" id="context-menu" style="display:none;"></div>
+<div id="error-container"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  const state = {
+    data: null,
+    expanded: new Set(['root']),
+    errors: new Map(),
+    editing: null
+  };
+
+  const treeEl = document.getElementById('json-tree');
+  const rawJsonEl = document.getElementById('raw-json');
+  const statsEl = document.getElementById('json-stats');
+  const pathEl = document.getElementById('current-path');
+  const contextMenu = document.getElementById('context-menu');
+  const errorContainer = document.getElementById('error-container');
+  const resizer = document.getElementById('resizer');
+
+  const SAMPLE_JSON = {
+    "name": "张三",
+    "age": 28,
+    "isStudent": false,
+    "email": "zhangsan@example.com",
+    "address": {
+      "city": "北京",
+      "district": "海淀区",
+      "street": "中关村大街 1 号",
+      "zip": "100080"
+    },
+    "hobbies": ["读书", "编程", "游泳"],
+    "scores": {
+      "数学": 95,
+      "语文": 88,
+      "英语": 92
+    },
+    "metadata": null,
+    "friends": [
+      {"name": "李四", "age": 26, "contact": {"phone": "13800138000"}},
+      {"name": "王五", "age": 30, "contact": {"phone": "13900139000"}}
+    ]
+  };
+
+  function init() {
+    setData(JSON.parse(JSON.stringify(SAMPLE_JSON)));
+    bindEvents();
+  }
+
+  function setData(data) {
+    state.data = data;
+    state.expanded = new Set(['root']);
+    expandAllChildren('root', data);
+    render();
+    syncRawJson();
+  }
+
+  function expandAllChildren(path, value) {
+    if (value && typeof value === 'object') {
+      state.expanded.add(path);
+      if (Array.isArray(value)) {
+        value.forEach((v, i) => expandAllChildren(path + '[' + i + ']', v));
+      } else {
+        Object.keys(value).forEach(k => expandAllChildren(path + '.' + k, value[k]));
+      }
+    }
+  }
+
+  function getType(v) {
+    if (v === null) return 'null';
+    if (Array.isArray(v)) return 'array';
+    return typeof v;
+  }
+
+  function parseValue(str, targetType) {
+    str = str.trim();
+    if (targetType === 'string') return str;
+    if (targetType === 'number') {
+      if (str === '' || isNaN(Number(str))) throw new Error('无效的数字');
+      return Number(str);
+    }
+    if (targetType === 'boolean') {
+      if (str === 'true') return true;
+      if (str === 'false') return false;
+      throw new Error('布尔值必须为 true 或 false');
+    }
+    if (targetType === 'null') {
+      if (str === 'null' || str === '') return null;
+      throw new Error('null 值必须为 null');
+    }
+    if (targetType === 'array') {
+      try {
+        const v = JSON.parse(str);
+        if (!Array.isArray(v)) throw new Error('不是数组');
+        return v;
+      } catch { throw new Error('无效的 JSON 数组'); }
+    }
+    if (targetType === 'object') {
+      try {
+        const v = JSON.parse(str);
+        if (typeof v !== 'object' || Array.isArray(v) || v === null) throw new Error('不是对象');
+        return v;
+      } catch { throw new Error('无效的 JSON 对象'); }
+    }
+    return str;
+  }
+
+  function autoParse(str) {
+    str = str.trim();
+    if (str === 'null') return { value: null, type: 'null' };
+    if (str === 'true') return { value: true, type: 'boolean' };
+    if (str === 'false') return { value: false, type: 'boolean' };
+    if (str !== '' && !isNaN(Number(str)) && !/^0\d+/.test(str)) {
+      return { value: Number(str), type: 'number' };
+    }
+    if (str.startsWith('{') || str.startsWith('[')) {
+      try {
+        const v = JSON.parse(str);
+        return { value: v, type: getType(v) };
+      } catch {}
+    }
+    return { value: str, type: 'string' };
+  }
+
+  function getValueAtPath(path) {
+    if (path === 'root') return state.data;
+    const parts = parsePath(path);
+    let current = state.data;
+    for (const p of parts) current = current[p];
+    return current;
+  }
+
+  function setValueAtPath(path, value) {
+    if (path === 'root') { state.data = value; return; }
+    const parts = parsePath(path);
+    const last = parts.pop();
+    let current = state.data;
+    for (const p of parts) current = current[p];
+    current[last] = value;
+  }
+
+  function deleteAtPath(path) {
+    if (path === 'root') return;
+    const parts = parsePath(path);
+    const last = parts.pop();
+    let current = state.data;
+    for (const p of parts) current = current[p];
+    if (Array.isArray(current)) current.splice(Number(last), 1);
+    else delete current[last];
+  }
+
+  function parsePath(path) {
+    const result = [];
+    const re = /\.([^.\[\]]+)|\[(\d+)\]/g;
+    let m;
+    while ((m = re.exec(path)) !== null) {
+      result.push(m[1] !== undefined ? m[1] : Number(m[2]));
+    }
+    return result;
+  }
+
+  function getParentPath(path) {
+    if (path === 'root') return null;
+    const parts = parsePath(path);
+    parts.pop();
+    if (parts.length === 0) return 'root';
+    return 'root.' + parts.map(p => typeof p === 'number' ? '[' + p + ']' : p).join('.').replace(/\.\[/g, '[');
+  }
+
+  function getKeyAtPath(path) {
+    if (path === 'root') return null;
+    const parts = parsePath(path);
+    return parts[parts.length - 1];
+  }
+
+  function pathToDisplay(path) {
+    if (path === 'root') return '根对象';
+    return path.replace(/^root\./, '').replace(/\.(\d+)/g, '[$1]');
+  }
+
+  function render() {
+    treeEl.innerHTML = '';
+    state.errors.clear();
+    renderNode(state.data, 'root', null, treeEl, true);
+    updateStats();
+  }
+
+  function renderNode(value, path, key, parent, isRoot) {
+    const type = getType(value);
+    const li = document.createElement('li');
+    const nodeDiv = document.createElement('div');
+    nodeDiv.className = 'tree-node';
+    nodeDiv.dataset.path = path;
+    nodeDiv.dataset.type = type;
+    nodeDiv.dataset.key = key === null ? '' : String(key);
+
+    const row = document.createElement('div');
+    row.className = 'node-row';
+
+    const toggle = document.createElement('span');
+    toggle.className = 'toggle';
+    const hasChildren = type === 'object' || type === 'array';
+    const childCount = hasChildren ? (Array.isArray(value) ? value.length : Object.keys(value).length) : 0;
+    if (!hasChildren || childCount === 0) toggle.classList.add('empty');
+    const expanded = state.expanded.has(path);
+    if (expanded && hasChildren) toggle.classList.add('expanded');
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+    row.appendChild(toggle);
+
+    if (key !== null && !isRoot) {
+      const keyEl = document.createElement('span');
+      keyEl.className = 'key';
+      keyEl.textContent = typeof key === 'number' ? String(key) : JSON.stringify(key).slice(1, -1);
+      keyEl.dataset.path = path;
+      keyEl.addEventListener('dblclick', e => {
+        e.stopPropagation();
+        if (type === 'array') return;
+        startEditKey(nodeDiv, key, path);
+      });
+      row.appendChild(keyEl);
+    }
+
+    if (hasChildren) {
+      const bracketOpen = document.createElement('span');
+      bracketOpen.className = 'bracket ' + type + (expanded ? '' : ' collapsed');
+      bracketOpen.dataset.count = expanded ? '' : (childCount + ' 项');
+      row.appendChild(bracketOpen);
+
+      if (childCount > 0) {
+        const valueLabel = document.createElement('span');
+        valueLabel.className = 'value ' + type;
+        valueLabel.textContent = type === 'array' ? 'Array(' + childCount + ')' : 'Object(' + childCount + ')';
+        if (!expanded) {
+          row.appendChild(valueLabel);
+          const bracketClose = document.createElement('span');
+          bracketClose.className = 'bracket ' + type + ' collapsed';
+          bracketClose.dataset.count = '';
+          bracketClose.textContent = '';
+          row.appendChild(bracketClose);
+        } else {
+          valueLabel.style.display = 'none';
+          row.appendChild(valueLabel);
+        }
+      } else {
+        const bracketClose = document.createElement('span');
+        bracketClose.className = 'bracket ' + type;
+        bracketClose.textContent = '';
+        row.appendChild(bracketClose);
+      }
+    } else {
+      const valueEl = document.createElement('span');
+      valueEl.className = 'value ' + type;
+      if (state.errors.has(path)) {
+        valueEl.classList.add('error');
+      }
+      valueEl.textContent = type === 'string' ? JSON.stringify(value) : String(value);
+      valueEl.dataset.path = path;
+      valueEl.addEventListener('dblclick', e => {
+        e.stopPropagation();
+        startEditValue(valueEl, value, type, path);
+      });
+      row.appendChild(valueEl);
+    }
+
+    nodeDiv.appendChild(row);
+    li.appendChild(nodeDiv);
+
+    if (hasChildren && expanded && childCount > 0) {
+      const ul = document.createElement('ul');
+      const entries = Array.isArray(value)
+        ? value.map((v, i) => [i, v])
+        : Object.entries(value);
+      for (const [k, v] of entries) {
+        const childPath = path + (typeof k === 'number' ? '[' + k + ']' : '.' + k);
+        renderNode(v, childPath, k, ul, false);
+      }
+      li.appendChild(ul);
+    }
+
+    parent.appendChild(li);
+
+    if (hasChildren) {
+      toggle.addEventListener('click', e => {
+        e.stopPropagation();
+        if (childCount === 0) return;
+        if (state.expanded.has(path)) state.expanded.delete(path);
+        else state.expanded.add(path);
+        render();
+      });
+    }
+
+    setupDragAndDrop(nodeDiv, path, type, isRoot);
+    nodeDiv.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      showContextMenu(e.clientX, e.clientY, path, type, isRoot);
+    });
+
+    return li;
+  }
+
+  function startEditValue(el, value, type, path) {
+    closeAllEdits();
+    state.editing = { path, el };
+
+    const row = el.parentElement;
+    const container = document.createElement('span');
+    container.style.display = 'inline-flex';
+    container.style.alignItems = 'center';
+
+    const typeSel = document.createElement('select');
+    typeSel.className = 'type-selector';
+    ['string', 'number', 'boolean', 'null', 'object', 'array'].forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      if (t === type) opt.selected = true;
+      typeSel.appendChild(opt);
+    });
+    container.appendChild(typeSel);
+
+    const input = document.createElement('input');
+    input.className = 'editable-input';
+    if (type === 'string') input.value = value;
+    else if (type === 'object' || type === 'array') input.value = JSON.stringify(value);
+    else input.value = String(value);
+
+    if (type === 'null') {
+      input.value = 'null';
+      input.readOnly = true;
+    }
+
+    container.appendChild(input);
+    el.replaceWith(container);
+    input.focus();
+    input.select();
+
+    function commit() {
+      const newType = typeSel.value;
+      try {
+        const newValue = parseValue(input.value, newType);
+        setValueAtPath(path, newValue);
+        state.errors.delete(path);
+        hideErrorBanner();
+        state.editing = null;
+        if (newType === 'object' || newType === 'array') {
+          expandAllChildren(path, newValue);
+        }
+        render();
+        syncRawJson();
+      } catch (err) {
+        input.classList.add('invalid');
+        showErrorBanner(err.message, path);
+      }
+    }
+
+    function cancel() {
+      state.editing = null;
+      render();
+    }
+
+    input.addEventListener('input', () => {
+      input.classList.remove('invalid');
+      const newType = typeSel.value;
+      try {
+        parseValue(input.value, newType);
+        input.classList.remove('invalid');
+        hideErrorBanner();
+      } catch (err) {
+        input.classList.add('invalid');
+      }
+    });
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
+
+    typeSel.addEventListener('change', () => {
+      const t = typeSel.value;
+      input.readOnly = t === 'null';
+      if (t === 'null') { input.value = 'null'; input.classList.remove('invalid'); }
+      else if (t === 'boolean' && input.value !== 'true' && input.value !== 'false') { input.value = 'true'; }
+      else if (t === 'number' && input.value === '') { input.value = '0'; }
+      input.dispatchEvent(new Event('input'));
+    });
+
+    document.addEventListener('click', cancel, { once: true });
+    container.addEventListener('click', e => e.stopPropagation());
+  }
+
+  function startEditKey(nodeDiv, oldKey, path) {
+    closeAllEdits();
+    const row = nodeDiv.querySelector('.node-row');
+    const keyEl = row.querySelector('.key');
+    if (!keyEl) return;
+
+    const input = document.createElement('input');
+    input.className = 'key-input';
+    input.value = String(oldKey);
+    keyEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const parentPath = getParentPath(path);
+    const parentValue = getValueAtPath(parentPath);
+
+    function commit() {
+      const newKey = input.value.trim();
+      if (!newKey) { render(); return; }
+      if (newKey === String(oldKey)) { render(); return; }
+      if (Object.prototype.hasOwnProperty.call(parentValue, newKey)) {
+        showErrorBanner('键名已存在: ' + newKey, path);
+        return;
+      }
+      const entries = Object.entries(parentValue);
+      const idx = entries.findIndex(([k]) => k === String(oldKey));
+      entries[idx] = [newKey, entries[idx][1]];
+      const newObj = {};
+      for (const [k, v] of entries) newObj[k] = v;
+      setValueAtPath(parentPath, newObj);
+      state.editing = null;
+      render();
+      syncRawJson();
+    }
+
+    function cancel() { render(); }
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
+
+    document.addEventListener('click', cancel, { once: true });
+    input.addEventListener('click', e => e.stopPropagation());
+  }
+
+  function closeAllEdits() {
+    state.editing = null;
+  }
+
+  function setupDragAndDrop(nodeDiv, path, type, isRoot) {
+    nodeDiv.draggable = !isRoot;
+
+    nodeDiv.addEventListener('dragstart', e => {
+      e.stopPropagation();
+      const parentPath = getParentPath(path);
+      const parent = getValueAtPath(parentPath);
+      if (isRoot || parent === undefined) { e.preventDefault(); return; }
+      nodeDiv.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('application/json-path', path);
+    });
+
+    nodeDiv.addEventListener('dragend', () => {
+      nodeDiv.classList.remove('dragging');
+      document.querySelectorAll('.tree-node').forEach(n => {
+        n.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+    });
+
+    nodeDiv.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = nodeDiv.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      nodeDiv.classList.remove('drag-over-top', 'drag-over-bottom');
+      nodeDiv.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+    });
+
+    nodeDiv.addEventListener('dragleave', e => {
+      if (!nodeDiv.contains(e.relatedTarget)) {
+        nodeDiv.classList.remove('drag-over-top', 'drag-over-bottom');
+      }
+    });
+
+    nodeDiv.addEventListener('drop', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const srcPath = e.dataTransfer.getData('application/json-path');
+      if (!srcPath || srcPath === path) return;
+
+      const srcParentPath = getParentPath(srcPath);
+      const tgtParentPath = getParentPath(path);
+      if (srcParentPath === null || tgtParentPath === null) return;
+
+      const srcParent = getValueAtPath(srcParentPath);
+      const tgtParent = getValueAtPath(tgtParentPath);
+      if (getType(srcParent) !== getType(tgtParent)) return;
+      if (Array.isArray(srcParent) !== Array.isArray(tgtParent)) return;
+
+      if (path.startsWith(srcPath + '.') || path.startsWith(srcPath + '[')) return;
+
+      const rect = nodeDiv.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const insertBefore = e.clientY < mid;
+
+      nodeDiv.classList.remove('drag-over-top', 'drag-over-bottom');
+
+      const srcKey = getKeyAtPath(srcPath);
+      const tgtKey = getKeyAtPath(path);
+      const isArray = Array.isArray(srcParent);
+
+      if (isArray) {
+        const srcIdx = Number(srcKey);
+        let tgtIdx = Number(tgtKey);
+        const [moved] = srcParent.splice(srcIdx, 1);
+        if (srcParent === tgtParent) {
+          if (srcIdx < tgtIdx) tgtIdx--;
+          const finalIdx = insertBefore ? tgtIdx : tgtIdx + 1;
+          srcParent.splice(finalIdx, 0, moved);
+        }
+      } else {
+        const srcK = String(srcKey);
+        const tgtK = String(tgtKey);
+        if (srcParent !== tgtParent) return;
+
+        const keys = Object.keys(srcParent);
+        const srcIdx = keys.indexOf(srcK);
+        const moved = srcParent[srcK];
+        keys.splice(srcIdx, 1);
+        let tgtIdx = keys.indexOf(tgtK);
+        const finalIdx = insertBefore ? tgtIdx : tgtIdx + 1;
+        keys.splice(finalIdx, 0, srcK);
+        const newObj = {};
+        for (const k of keys) newObj[k] = srcParent[k];
+        setValueAtPath(srcParentPath, newObj);
+      }
+      render();
+      syncRawJson();
+    });
+  }
+
+  function showContextMenu(x, y, path, type, isRoot) {
+    const items = [];
+    const parentType = isRoot ? null : getType(getValueAtPath(getParentPath(path)));
+    const parentIsArray = parentType === 'array';
+
+    if (!isRoot) {
+      items.push({ label: '➕ 添加同级键值对', icon: '＋', action: () => addSibling(path) });
+    }
+    if (type === 'object') {
+      items.push({ label: '➕ 添加子键值对', icon: '↳', action: () => addChild(path, 'object') });
+    }
+    if (type === 'array') {
+      items.push({ label: '➕ 添加子元素', icon: '↳', action: () => addChild(path, 'array') });
+    }
+    items.push({ separator: true });
+    items.push({ label: '📋 复制当前路径', icon: '⧉', action: () => copyPath(path) });
+    items.push({ label: '📋 复制 JSON 值', icon: '{ }', action: () => copyJsonValue(path) });
+    if (!isRoot) {
+      items.push({ separator: true });
+      items.push({ label: '🗑 删除该节点', icon: '✕', danger: true, action: () => deleteNode(path) });
+    }
+
+    contextMenu.innerHTML = '';
+    items.forEach(item => {
+      if (item.separator) {
+        const sep = document.createElement('div');
+        sep.className = 'context-menu-separator';
+        contextMenu.appendChild(sep);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'context-menu-item' + (item.danger ? ' danger' : '');
+        div.innerHTML = '<span class="context-menu-icon">' + item.icon + '</span>' +
+          '<span>' + item.label + '</span>';
+        div.addEventListener('click', () => {
+          hideContextMenu();
+          item.action();
+        });
+        contextMenu.appendChild(div);
+      }
+    });
+
+    contextMenu.style.display = 'block';
+    const rect = contextMenu.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cx = x + rect.width > vw ? vw - rect.width - 10 : x;
+    const cy = y + rect.height > vh ? vh - rect.height - 10 : y;
+    contextMenu.style.left = cx + 'px';
+    contextMenu.style.top = cy + 'px';
+  }
+
+  function hideContextMenu() {
+    contextMenu.style.display = 'none';
+  }
+
+  function addSibling(path) {
+    const parentPath = getParentPath(path);
+    const parent = getValueAtPath(parentPath);
+    const key = getKeyAtPath(path);
+
+    if (Array.isArray(parent)) {
+      const idx = Number(key);
+      parent.splice(idx + 1, 0, '新元素');
+    } else {
+      let newKey = 'newKey';
+      let counter = 1;
+      while (newKey in parent) newKey = 'newKey' + (++counter);
+      const keys = Object.keys(parent);
+      const tgtIdx = keys.indexOf(String(key));
+      const newObj = {};
+      for (let i = 0; i <= tgtIdx; i++) newObj[keys[i]] = parent[keys[i]];
+      newObj[newKey] = '新值';
+      for (let i = tgtIdx + 1; i < keys.length; i++) newObj[keys[i]] = parent[keys[i]];
+      setValueAtPath(parentPath, newObj);
+    }
+    state.expanded.add(parentPath);
+    render();
+    syncRawJson();
+  }
+
+  function addChild(path, parentType) {
+    const parent = getValueAtPath(path);
+    state.expanded.add(path);
+
+    if (parentType === 'array') {
+      parent.push('新元素');
+    } else {
+      let newKey = 'newKey';
+      let counter = 1;
+      while (newKey in parent) newKey = 'newKey' + (++counter);
+      parent[newKey] = '新值';
+    }
+    render();
+    syncRawJson();
+  }
+
+  function deleteNode(path) {
+    const display = pathToDisplay(path);
+    if (!confirm('确认删除节点: ' + display + ' ?')) return;
+    deleteAtPath(path);
+    render();
+    syncRawJson();
+  }
+
+  function copyPath(path) {
+    const display = pathToDisplay(path);
+    navigator.clipboard.writeText(display).then(() => {
+      showTemp('✓ 路径已复制: ' + display);
+    });
+  }
+
+  function copyJsonValue(path) {
+    const val = getValueAtPath(path);
+    const str = JSON.stringify(val, null, 2);
+    navigator.clipboard.writeText(str).then(() => {
+      showTemp('✓ JSON 值已复制');
+    });
+  }
+
+  function showTemp(msg) {
+    const banner = document.createElement('div');
+    banner.className = 'error-banner';
+    banner.style.background = '#a6e3a1';
+    banner.style.color = '#1e1e2e';
+    banner.textContent = msg;
+    errorContainer.appendChild(banner);
+    setTimeout(() => banner.remove(), 2000);
+  }
+
+  function showErrorBanner(msg, path) {
+    errorContainer.innerHTML = '';
+    const banner = document.createElement('div');
+    banner.className = 'error-banner';
+    banner.innerHTML = '<strong>⚠ 错误:</strong> ' + msg +
+      '<br><span class="error-path">路径: ' + pathToDisplay(path) + '</span>';
+    errorContainer.appendChild(banner);
+  }
+
+  function hideErrorBanner() {
+    errorContainer.innerHTML = '';
+  }
+
+  function syncRawJson() {
+    try {
+      rawJsonEl.value = JSON.stringify(state.data, null, 2);
+      rawJsonEl.style.color = '#cdd6f4';
+      hideErrorBanner();
+    } catch (e) {
+      rawJsonEl.style.color = '#f38ba8';
+    }
+  }
+
+  function updateStats() {
+    let count = 0;
+    function walk(v) {
+      count++;
+      if (v && typeof v === 'object') {
+        if (Array.isArray(v)) v.forEach(walk);
+        else Object.values(v).forEach(walk);
+      }
+    }
+    walk(state.data);
+    statsEl.textContent = '节点: ' + count + '  |  大小: ' +
+      new Blob([JSON.stringify(state.data)]).size + ' B';
+  }
+
+  function bindEvents() {
+    document.addEventListener('click', () => {
+      hideContextMenu();
+      pathEl.textContent = '根对象';
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        hideContextMenu();
+        hideErrorBanner();
+      }
+    });
+
+    treeEl.addEventListener('mousemove', e => {
+      const node = e.target.closest('.tree-node');
+      if (node) {
+        const path = node.dataset.path;
+        pathEl.textContent = pathToDisplay(path);
+      }
+    });
+
+    rawJsonEl.addEventListener('input', () => {
+      try {
+        const parsed = JSON.parse(rawJsonEl.value);
+        state.data = parsed;
+        rawJsonEl.style.color = '#cdd6f4';
+        state.expanded = new Set(['root']);
+        expandAllChildren('root', state.data);
+        render();
+        hideErrorBanner();
+      } catch (err) {
+        rawJsonEl.style.color = '#f38ba8';
+        showErrorBanner('JSON 语法错误: ' + err.message, 'root');
+      }
+    });
+
+    document.getElementById('btn-expand-all').addEventListener('click', () => {
+      state.expanded = new Set(['root']);
+      expandAllChildren('root', state.data);
+      render();
+    });
+
+    document.getElementById('btn-collapse-all').addEventListener('click', () => {
+      state.expanded = new Set();
+      render();
+    });
+
+    document.getElementById('btn-format').addEventListener('click', () => {
+      try {
+        state.data = JSON.parse(rawJsonEl.value);
+        state.expanded = new Set(['root']);
+        expandAllChildren('root', state.data);
+        render();
+        syncRawJson();
+        showTemp('✓ 已格式化');
+      } catch (err) {
+        showErrorBanner('无法格式化: ' + err.message, 'root');
+      }
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      if (!confirm('确认清空所有数据?')) return;
+      setData({});
+    });
+
+    document.getElementById('btn-sample').addEventListener('click', () => {
+      setData(JSON.parse(JSON.stringify(SAMPLE_JSON)));
+      showTemp('✓ 已加载示例数据');
+    });
+
+    let resizing = false;
+    let startY, startHeight;
+    resizer.addEventListener('mousedown', e => {
+      resizing = true;
+      resizer.classList.add('active');
+      startY = e.clientY;
+      const footer = resizer.nextElementSibling;
+      startHeight = footer.offsetHeight;
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', e => {
+      if (!resizing) return;
+      const delta = startY - e.clientY;
+      const footer = resizer.nextElementSibling;
+      const newHeight = Math.min(Math.max(120, startHeight + delta), window.innerHeight * 0.7);
+      footer.style.height = newHeight + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (resizing) {
+        resizing = false;
+        resizer.classList.remove('active');
+        document.body.style.userSelect = '';
+      }
+    });
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
