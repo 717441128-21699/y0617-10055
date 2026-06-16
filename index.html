@@ -70,6 +70,34 @@ header h1{font-size:16px;font-weight:600;color:#89b4fa;white-space:nowrap;margin
 .diff-panel-item.removed .dp-type{color:#f38ba8}
 .diff-panel-item .dp-path{color:#89b4fa;font-family:"JetBrains Mono",monospace;font-size:10px;margin-top:2px}
 
+.diff-filters{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:0 0 8px;border-bottom:1px solid #45475a;margin-bottom:8px}
+.diff-filter-btn{padding:2px 7px;border-radius:4px;font-size:10px;cursor:pointer;border:1px solid #45475a;background:transparent;color:#cdd6f4;transition:all .15s;white-space:nowrap}
+.diff-filter-btn.active{background:#45475a;border-color:#7f849c}
+.diff-filter-btn.f-added{border-color:#a6e3a1;color:#a6e3a1}
+.diff-filter-btn.f-added.active{background:rgba(166,227,161,.2)}
+.diff-filter-btn.f-modified{border-color:#f9e2af;color:#f9e2af}
+.diff-filter-btn.f-modified.active{background:rgba(249,226,175,.2)}
+.diff-filter-btn.f-removed{border-color:#f38ba8;color:#f38ba8}
+.diff-filter-btn.f-removed.active{background:rgba(243,139,168,.2)}
+.diff-filter-input{background:#1e1e2e;border:1px solid #45475a;color:#cdd6f4;font-size:11px;padding:2px 6px;border-radius:4px;outline:none;width:100%;margin-top:6px}
+.diff-filter-input:focus{border-color:#89b4fa}
+.diff-batch{display:flex;gap:4px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #45475a;margin-bottom:8px}
+.diff-batch .btn{font-size:10px;padding:2px 6px}
+.diff-active-highlight{background:rgba(137,180,250,.25) !important;outline:2px solid #89b4fa;border-radius:4px}
+
+.schema-group{margin-bottom:8px}
+.schema-group-header{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;background:#1e1e2e;border-left:3px solid #45475a;margin-bottom:4px}
+.schema-group-header:hover{background:#313244}
+.schema-group-header.g-type{border-left-color:#f38ba8;color:#f38ba8}
+.schema-group-header.g-required{border-left-color:#fab387;color:#fab387}
+.schema-group-header.g-additional{border-left-color:#f9e2af;color:#f9e2af}
+.schema-group-header.g-enum{border-left-color:#cba6f7;color:#cba6f7}
+.schema-group-header.g-constraint{border-left-color:#89dceb;color:#89dceb}
+.schema-group-header.g-other{border-left-color:#7f849c;color:#7f849c}
+.schema-group-count{font-size:10px;color:#6c7086;font-weight:400;margin-left:auto}
+.schema-group-body{padding-left:4px}
+.schema-group-body.collapsed{display:none}
+
 main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
 #tree-container{flex:1;overflow:auto;padding:12px 16px;min-height:0}
 .json-tree{font-family:"JetBrains Mono","Fira Code",Consolas,monospace;font-size:13px;line-height:1.6;user-select:none}
@@ -401,20 +429,21 @@ function getRemovedChildren(parentPath, parentValue) {
   if (!state.savedSnapshot) return result;
   var oldVal = getOldValueAtPath(parentPath);
   if (oldVal === undefined || oldVal === null || typeof oldVal !== 'object') return result;
-  if (Array.isArray(oldVal)) {
-    var newLen = Array.isArray(parentValue) ? parentValue.length : 0;
-    for (var i = newLen; i < oldVal.length; i++) {
-      result.push({key: i, value: oldVal[i]});
+  state.diffMap.forEach(function(type, path) {
+    if (type !== 'removed') return;
+    var pp = getParentPath(path);
+    if (pp !== parentPath) return;
+    var key = getKeyAtPath(path);
+    if (typeof key === 'number') {
+      if (Array.isArray(oldVal) && key < oldVal.length) result.push({key: key, value: oldVal[key]});
+    } else {
+      if (!Array.isArray(oldVal) && oldVal.hasOwnProperty(key)) result.push({key: key, value: oldVal[key]});
     }
-  } else {
-    var oldKeys = Object.keys(oldVal);
-    for (var j = 0; j < oldKeys.length; j++) {
-      var k = oldKeys[j];
-      if (!parentValue || !(k in parentValue)) {
-        result.push({key: k, value: oldVal[k]});
-      }
-    }
-  }
+  });
+  result.sort(function(a, b) {
+    if (typeof a.key === 'number' && typeof b.key === 'number') return a.key - b.key;
+    return String(a.key).localeCompare(String(b.key));
+  });
   return result;
 }
 function setValueAtPath(path, value) {
@@ -732,6 +761,9 @@ function renderNode(value, path, key, parent, isRoot, isRemoved) {
       e.preventDefault(); e.stopPropagation();
       showContextMenu(e.clientX, e.clientY, path, type, isRoot, typeof key === 'number');
     });
+  } else {
+    nodeDiv.addEventListener('contextmenu', function(e) { e.preventDefault(); e.stopPropagation(); });
+    nodeDiv.addEventListener('dblclick', function(e) { e.preventDefault(); e.stopPropagation(); });
   }
   return li;
 }
@@ -1151,6 +1183,22 @@ function updateSchemaStatus() {
   else { schemaStatusEl.textContent = '✗ 发现 ' + total + ' 个问题'; schemaStatusEl.className = 'schema-status err'; }
 }
 
+function classifyError(msg) {
+  if (/类型应为/.test(msg) || /实际为/.test(msg)) return 'type';
+  if (/缺少必填/.test(msg)) return 'required';
+  if (/额外属性|不允许/.test(msg)) return 'additional';
+  if (/枚举范围/.test(msg)) return 'enum';
+  if (/最小|最大|长度|项数|重复/.test(msg)) return 'constraint';
+  return 'other';
+}
+var errorGroupLabels = {
+  type: {label: '类型错误', cls: 'g-type'},
+  required: {label: '缺少必填字段', cls: 'g-required'},
+  additional: {label: '额外字段', cls: 'g-additional'},
+  enum: {label: '枚举约束', cls: 'g-enum'},
+  constraint: {label: '值约束', cls: 'g-constraint'},
+  other: {label: '其他', cls: 'g-other'}
+};
 function updateIssuesList() {
   if (state.schemaSyntaxError) {
     issuesBodyEl.innerHTML = '<div class="schema-syntax-error"><strong>⚠ Schema 语法错误</strong><br>' + escapeHtml(state.schemaSyntaxError) + '</div>';
@@ -1174,19 +1222,48 @@ function updateIssuesList() {
   badgeIssues.style.display = 'inline-flex';
   badgeIssues.className = 'footer-badge';
   badgeIssues.textContent = '⚠ ' + all.length + ' 问题';
-  var html = '';
+
+  var groups = {};
   for (var i = 0; i < all.length; i++) {
-    var e = all[i];
-    html += '<div class="schema-issue' + (e.severity === 'warning' ? ' warning' : '') + '" data-path="' + escapeHtml(e.path) + '">' +
-      '<div class="si-msg">' + escapeHtml(e.message) + '</div>' +
-      '<div class="si-path">' + escapeHtml(pathToDisplay(e.path)) + '</div></div>';
+    var cat = classifyError(all[i].message);
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(all[i]);
+  }
+
+  var html = '';
+  var order = ['type', 'required', 'additional', 'enum', 'constraint', 'other'];
+  for (var gi = 0; gi < order.length; gi++) {
+    var gk = order[gi];
+    if (!groups[gk]) continue;
+    var gl = errorGroupLabels[gk];
+    var items = groups[gk];
+    html += '<div class="schema-group">';
+    html += '<div class="schema-group-header ' + gl.cls + '" data-group="' + gk + '">' +
+      '<span>▸ ' + escapeHtml(gl.label) + '</span>' +
+      '<span class="schema-group-count">' + items.length + '</span></div>';
+    html += '<div class="schema-group-body" data-group-body="' + gk + '">';
+    for (var j = 0; j < items.length; j++) {
+      var e = items[j];
+      html += '<div class="schema-issue' + (e.severity === 'warning' ? ' warning' : '') + '" data-path="' + escapeHtml(e.path) + '">' +
+        '<div class="si-msg">' + escapeHtml(e.message) + '</div>' +
+        '<div class="si-path">' + escapeHtml(pathToDisplay(e.path)) + '</div></div>';
+    }
+    html += '</div></div>';
   }
   issuesBodyEl.innerHTML = html;
+  issuesBodyEl.querySelectorAll('.schema-group-header').forEach(function(h) {
+    h.addEventListener('click', function(e) {
+      if (e.target.closest('.schema-issue')) return;
+      var body = issuesBodyEl.querySelector('[data-group-body="' + h.dataset.group + '"]');
+      if (body) body.classList.toggle('collapsed');
+      var arrow = h.querySelector('span');
+      if (arrow) arrow.textContent = (body && body.classList.contains('collapsed')) ? '▸' : '▾';
+    });
+  });
   issuesBodyEl.querySelectorAll('.schema-issue').forEach(function(el) {
     el.addEventListener('click', function() {
       var p = el.dataset.path;
       navigateToPath(p);
-      closeAllPanels();
     });
   });
 }
@@ -1206,18 +1283,7 @@ function diffRecursive(oldVal, newVal, path) {
     return;
   }
   if (oldT === 'array' && newT === 'array') {
-    var changed = false;
-    var maxLen = Math.max(oldVal.length, newVal.length);
-    for (var i = 0; i < maxLen; i++) {
-      var cp = buildPath(path, i);
-      if (i >= oldVal.length) { state.diffMap.set(cp, 'added'); changed = true; }
-      else if (i >= newVal.length) { state.diffMap.set(cp, 'removed'); changed = true; }
-      else {
-        diffRecursive(oldVal[i], newVal[i], cp);
-        if (state.diffMap.has(cp)) changed = true;
-      }
-    }
-    if (changed && !state.diffMap.has(path)) state.diffMap.set(path, 'modified');
+    diffArray(oldVal, newVal, path);
     return;
   }
   var oldKeys = oldVal ? Object.keys(oldVal) : [];
@@ -1236,6 +1302,64 @@ function diffRecursive(oldVal, newVal, path) {
     }
   });
   if (changed2 && !state.diffMap.has(path)) state.diffMap.set(path, 'modified');
+}
+function diffArray(oldArr, newArr, path) {
+  var m = oldArr.length, n = newArr.length;
+  var dp = [];
+  for (var i = 0; i <= m; i++) { dp[i] = []; for (var j = 0; j <= n; j++) dp[i][j] = 0; }
+  for (var i2 = 1; i2 <= m; i2++) {
+    for (var j2 = 1; j2 <= n; j2++) {
+      if (JSON.stringify(oldArr[i2-1]) === JSON.stringify(newArr[j2-1])) dp[i2][j2] = dp[i2-1][j2-1] + 1;
+      else dp[i2][j2] = Math.max(dp[i2-1][j2], dp[i2][j2-1]);
+    }
+  }
+  var i3 = m, j3 = n, ops = [];
+  while (i3 > 0 || j3 > 0) {
+    if (i3 > 0 && j3 > 0 && JSON.stringify(oldArr[i3-1]) === JSON.stringify(newArr[j3-1])) {
+      ops.push({type:'keep', oi:i3-1, ni:j3-1}); i3--; j3--;
+    } else if (j3 > 0 && (i3 === 0 || dp[i3][j3-1] >= dp[i3-1][j3])) {
+      ops.push({type:'add', ni:j3-1}); j3--;
+    } else {
+      ops.push({type:'remove', oi:i3-1}); i3--;
+    }
+  }
+  ops.reverse();
+  var changed = false;
+  for (var k = 0; k < ops.length; k++) {
+    var op = ops[k];
+    if (op.type === 'remove') {
+      var cp = buildPath(path, op.oi);
+      state.diffMap.set(cp, 'removed');
+      markDescRemoved(oldArr[op.oi], cp);
+      changed = true;
+    } else if (op.type === 'add') {
+      var cp2 = buildPath(path, op.ni);
+      state.diffMap.set(cp2, 'added');
+      markDescAdded(newArr[op.ni], cp2);
+      changed = true;
+    } else {
+      var cp3 = buildPath(path, op.ni);
+      diffRecursive(oldArr[op.oi], newArr[op.ni], cp3);
+      if (state.diffMap.has(cp3)) changed = true;
+    }
+  }
+  if (changed && !state.diffMap.has(path)) state.diffMap.set(path, 'modified');
+}
+function markDescAdded(val, path) {
+  if (val && typeof val === 'object') {
+    if (Array.isArray(val)) for (var i = 0; i < val.length; i++) {
+      var cp = buildPath(path, i);
+      state.diffMap.set(cp, 'added');
+      markDescAdded(val[i], cp);
+    } else {
+      var ks = Object.keys(val);
+      for (var j = 0; j < ks.length; j++) {
+        var cp2 = buildPath(path, ks[j]);
+        state.diffMap.set(cp2, 'added');
+        markDescAdded(val[ks[j]], cp2);
+      }
+    }
+  }
 }
 function markDescRemoved(val, path) {
   if (val && typeof val === 'object') {
@@ -1271,6 +1395,7 @@ function applyDiffHighlights() {
     }
   });
 }
+var diffFilterState = {type: 'all', keyword: '', activePath: null};
 function updateDiffList() {
   if (!state.savedSnapshot) {
     diffBodyEl.innerHTML = '<div class="history-empty">尚未保存基准版本<br>点击「💾 保存」后即可对比</div>';
@@ -1286,18 +1411,139 @@ function updateDiffList() {
   }
   badgeDiff.style.display = 'inline-flex';
   badgeDiff.textContent = '🔍 ' + entries.length + ' 变更';
-  var html = '';
+
+  var counts = {added:0, modified:0, removed:0};
+  entries.forEach(function(e){counts[e.type]++});
+
+  var html = '<div class="diff-filters">';
+  html += '<span class="diff-filter-btn active" data-filter="all">全部 ' + entries.length + '</span>';
+  if (counts.added) html += '<span class="diff-filter-btn f-added" data-filter="added">+新增 ' + counts.added + '</span>';
+  if (counts.modified) html += '<span class="diff-filter-btn f-modified" data-filter="modified">~修改 ' + counts.modified + '</span>';
+  if (counts.removed) html += '<span class="diff-filter-btn f-removed" data-filter="removed">-删除 ' + counts.removed + '</span>';
+  html += '</div>';
+  html += '<input class="diff-filter-input" id="diff-keyword" placeholder="按路径筛选…" value="' + escapeHtml(diffFilterState.keyword) + '">';
+  html += '<div class="diff-batch">';
+  html += '<button class="btn btn-sm" id="diff-batch-locate">📍 批量定位</button>';
+  html += '<button class="btn btn-sm" id="diff-batch-copy-paths">📋 路径清单</button>';
+  html += '<button class="btn btn-sm" id="diff-batch-export">📄 导出报告</button>';
+  html += '</div>';
+  html += '<div id="diff-items-container">';
   for (var i = 0; i < entries.length; i++) {
     var e = entries[i];
     var label = e.type === 'added' ? '新增' : (e.type === 'modified' ? '修改' : '删除');
-    html += '<div class="diff-panel-item ' + e.type + '" data-path="' + escapeHtml(e.path) + '">' +
+    html += '<div class="diff-panel-item ' + e.type + '" data-path="' + escapeHtml(e.path) + '" data-diff-type="' + e.type + '">' +
       '<span class="dp-type">' + label + '</span>' +
       '<span class="dp-path">' + escapeHtml(pathToDisplay(e.path)) + '</span></div>';
   }
+  html += '</div>';
   diffBodyEl.innerHTML = html;
-  diffBodyEl.querySelectorAll('.diff-panel-item').forEach(function(el) {
-    el.addEventListener('click', function() { navigateToPath(el.dataset.path); closeAllPanels(); });
+
+  applyDiffFilters();
+
+  diffBodyEl.querySelectorAll('.diff-filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      diffBodyEl.querySelectorAll('.diff-filter-btn').forEach(function(b){b.classList.remove('active')});
+      btn.classList.add('active');
+      diffFilterState.type = btn.dataset.filter;
+      applyDiffFilters();
+    });
   });
+  var keywordInput = document.getElementById('diff-keyword');
+  if (keywordInput) keywordInput.addEventListener('input', function() {
+    diffFilterState.keyword = this.value.trim().toLowerCase();
+    applyDiffFilters();
+  });
+  var batchLocate = document.getElementById('diff-batch-locate');
+  if (batchLocate) batchLocate.addEventListener('click', function() {
+    var visible = getFilteredDiffEntries();
+    if (visible.length === 0) { showTemp('无可见变更条目', false); return; }
+    visible.forEach(function(e) { expandToPath(e.path); });
+    render();
+    showTemp('✓ 已展开 ' + visible.length + ' 条变更路径', true);
+  });
+  var batchCopy = document.getElementById('diff-batch-copy-paths');
+  if (batchCopy) batchCopy.addEventListener('click', function() {
+    var visible = getFilteredDiffEntries();
+    if (visible.length === 0) { showTemp('无可见变更条目', false); return; }
+    var lines = visible.map(function(e) {
+      var label = e.type === 'added' ? '[+]' : (e.type === 'modified' ? '[~]' : '[-]');
+      return label + ' ' + pathToDisplay(e.path);
+    });
+    navigator.clipboard.writeText(lines.join('\n')).then(function(){showTemp('✓ 已复制 ' + lines.length + ' 条路径', true)});
+  });
+  var batchExport = document.getElementById('diff-batch-export');
+  if (batchExport) batchExport.addEventListener('click', exportDiffReport);
+
+  diffBodyEl.querySelectorAll('.diff-panel-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var p = el.dataset.path;
+      diffFilterState.activePath = p;
+      navigateToPath(p);
+      highlightActiveDiffItem();
+    });
+  });
+  if (diffFilterState.activePath) highlightActiveDiffItem();
+}
+function getFilteredDiffEntries() {
+  var entries = [];
+  state.diffMap.forEach(function(type, path){entries.push({type:type, path:path})});
+  return entries.filter(function(e) {
+    if (diffFilterState.type !== 'all' && e.type !== diffFilterState.type) return false;
+    if (diffFilterState.keyword && pathToDisplay(e.path).toLowerCase().indexOf(diffFilterState.keyword) === -1) return false;
+    return true;
+  });
+}
+function applyDiffFilters() {
+  var items = diffBodyEl.querySelectorAll('.diff-panel-item');
+  items.forEach(function(el) {
+    var t = el.dataset.diffType;
+    var p = el.dataset.path;
+    var display = pathToDisplay(p).toLowerCase();
+    var typeOk = diffFilterState.type === 'all' || t === diffFilterState.type;
+    var kwOk = !diffFilterState.keyword || display.indexOf(diffFilterState.keyword) !== -1;
+    el.style.display = (typeOk && kwOk) ? '' : 'none';
+  });
+}
+function highlightActiveDiffItem() {
+  diffBodyEl.querySelectorAll('.diff-panel-item').forEach(function(el) {
+    el.classList.remove('diff-active-highlight');
+    if (el.dataset.path === diffFilterState.activePath) el.classList.add('diff-active-highlight');
+  });
+}
+function exportDiffReport() {
+  var entries = [];
+  state.diffMap.forEach(function(type, path){entries.push({type:type, path:path})});
+  if (entries.length === 0) { showTemp('无变更可导出', false); return; }
+  var report = {
+    title: 'JSON 配置差异报告',
+    generatedAt: new Date().toISOString(),
+    totalChanges: entries.length,
+    summary: {added: 0, modified: 0, removed: 0},
+    changes: []
+  };
+  entries.forEach(function(e) {
+    report.summary[e.type]++;
+    var item = {type: e.type, path: pathToDisplay(e.path), internalPath: e.path};
+    if (e.type === 'removed') {
+      var oldVal = getOldValueAtPath(e.path);
+      item.oldValue = oldVal;
+    } else if (e.type === 'added') {
+      try { item.newValue = getValueAtPath(e.path); } catch(ex) {}
+    } else {
+      try {
+        item.oldValue = getOldValueAtPath(e.path);
+        item.newValue = getValueAtPath(e.path);
+      } catch(ex) {}
+    }
+    report.changes.push(item);
+  });
+  var blob = new Blob([JSON.stringify(report, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'diff-report-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showTemp('✓ 已导出差异报告', true);
 }
 
 var searchDebounceTimer = null;
@@ -1379,6 +1625,7 @@ function navigateToPath(path) {
       setTimeout(function(){node.style.background = '';}, 1400);
     }
   });
+  document.querySelectorAll('.diff-active-highlight').forEach(function(el){el.classList.remove('diff-active-highlight')});
 }
 function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
