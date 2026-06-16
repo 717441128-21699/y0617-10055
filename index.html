@@ -3,68 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JSON 可视化编辑器</title>
+<title>JSON 可视化编辑器 - 配置工作台</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#1e1e2e;color:#cdd6f4;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{background:#313244;padding:10px 16px;border-bottom:1px solid #45475a;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
-header h1{font-size:17px;font-weight:600;color:#89b4fa;white-space:nowrap}
-.btn{background:#45475a;color:#cdd6f4;border:1px solid #585b70;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .2s;white-space:nowrap}
+header{background:#313244;padding:8px 14px;border-bottom:1px solid #45475a;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.toolbar-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+header h1{font-size:16px;font-weight:600;color:#89b4fa;white-space:nowrap;margin-right:4px}
+.btn{background:#45475a;color:#cdd6f4;border:1px solid #585b70;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{background:#585b70;border-color:#7f849c}
 .btn-primary{background:#89b4fa;color:#1e1e2e;border-color:#89b4fa}
 .btn-primary:hover{background:#b4befe;border-color:#b4befe}
 .btn-danger{background:#f38ba8;color:#1e1e2e;border-color:#f38ba8}
 .btn-danger:hover{background:#eba0ac;border-color:#eba0ac}
-.btn-sm{padding:3px 8px;font-size:11px}
-
-.toolbar-row{display:flex;align-items:center;gap:6px;width:100%}
-.toolbar-secondary{margin-top:6px;display:none;align-items:center;gap:8px;width:100%}
-.toolbar-secondary.show{display:flex}
-
-.search-box{display:flex;align-items:center;background:#181825;border:1px solid #45475a;border-radius:6px;padding:0 8px;flex:1;max-width:340px;position:relative}
-.search-box input{background:transparent;border:none;color:#cdd6f4;font-size:13px;padding:6px 4px;outline:none;width:100%;font-family:inherit}
+.btn-success{background:#a6e3a1;color:#1e1e2e;border-color:#a6e3a1}
+.btn-success:hover{background:#94e2d5;border-color:#94e2d5}
+.btn-warning{background:#f9e2af;color:#1e1e2e;border-color:#f9e2af}
+.btn-warning:hover{background:#fab387;border-color:#fab387}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:3px 7px;font-size:11px}
+.search-box{display:flex;align-items:center;background:#181825;border:1px solid #45475a;border-radius:5px;padding:0 8px;flex:1;max-width:300px;position:relative}
+.search-box input{background:transparent;border:none;color:#cdd6f4;font-size:12px;padding:5px 4px;outline:none;width:100%;font-family:inherit}
 .search-box input::placeholder{color:#6c7086}
-.search-icon{color:#6c7086;font-size:14px;flex-shrink:0;margin-right:4px}
-.search-badge{background:#89b4fa;color:#1e1e2e;border-radius:10px;font-size:11px;padding:1px 6px;font-weight:600;min-width:20px;text-align:center;flex-shrink:0}
-
-.search-results{position:absolute;top:100%;left:0;right:0;background:#313244;border:1px solid #45475a;border-radius:8px;max-height:280px;overflow-y:auto;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.4);margin-top:4px;display:none}
+.search-icon{color:#6c7086;font-size:13px;flex-shrink:0;margin-right:4px}
+.search-badge{background:#89b4fa;color:#1e1e2e;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:600;min-width:18px;text-align:center;flex-shrink:0}
+.search-results{position:absolute;top:100%;left:0;right:0;background:#313244;border:1px solid #45475a;border-radius:6px;max-height:260px;overflow-y:auto;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,.4);margin-top:3px;display:none}
 .search-results.show{display:block}
-.search-result-item{padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid #45475a;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.search-result-item{padding:6px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid #45475a;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .search-result-item:last-child{border-bottom:none}
 .search-result-item:hover{background:#45475a}
-.search-result-path{color:#89b4fa;font-family:"JetBrains Mono",monospace;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.search-result-preview{color:#a6e3a1;font-family:"JetBrains Mono",monospace;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%}
-mark{background:rgba(249,226,175,.35);color:#f9e2af;border-radius:2px;padding:0 1px}
+.search-result-path{color:#89b4fa;font-family:"JetBrains Mono",monospace;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.search-result-preview{color:#a6e3a1;font-family:"JetBrains Mono",monospace;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
+.path-display{font-size:11px;color:#7f849c;margin-left:auto;font-family:"JetBrains Mono",monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 
-.schema-area{flex:1;max-width:500px}
-.schema-toggle{font-size:12px;color:#7f849c;cursor:pointer;white-space:nowrap}
-.schema-toggle:hover{color:#cdd6f4}
+.side-panels{position:fixed;top:0;right:0;height:100%;width:0;z-index:500;display:flex;pointer-events:none}
+.side-panel{position:relative;background:#181825;border-left:1px solid #45475a;height:100%;overflow:hidden;transition:width .25s;width:0;display:flex;flex-direction:column;pointer-events:auto}
+.side-panel.open{width:320px}
+.panel-header{padding:10px 14px;background:#313244;border-bottom:1px solid #45475a;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#89b4fa;flex-shrink:0}
+.panel-close{margin-left:auto;background:transparent;border:none;color:#7f849c;cursor:pointer;font-size:16px;padding:0 4px}
+.panel-close:hover{color:#cdd6f4}
+.panel-body{flex:1;overflow:auto;padding:10px 12px}
 
-.path-display{font-size:11px;color:#7f849c;margin-left:auto;font-family:"JetBrains Mono",monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.history-item{padding:7px 10px;border-radius:5px;margin-bottom:5px;font-size:12px;cursor:pointer;border-left:3px solid #45475a;background:#1e1e2e;display:flex;align-items:center;gap:8px}
+.history-item:hover{background:#313244}
+.history-item.active{border-left-color:#89b4fa;background:rgba(137,180,250,.1)}
+.history-item .h-icon{font-size:14px;flex-shrink:0;width:18px;text-align:center}
+.history-item .h-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-item .h-time{font-size:10px;color:#6c7086;flex-shrink:0}
+.history-empty{color:#6c7086;text-align:center;padding:24px 12px;font-size:12px}
+
+.schema-issue{padding:7px 10px;border-radius:5px;margin-bottom:5px;font-size:11px;cursor:pointer;border-left:3px solid #f38ba8;background:rgba(243,139,168,.08)}
+.schema-issue.warning{border-left-color:#f9e2af;background:rgba(249,226,175,.08)}
+.schema-issue:hover{background:#313244}
+.schema-issue .si-msg{color:#cdd6f4;line-height:1.4}
+.schema-issue .si-path{color:#89b4fa;font-family:"JetBrains Mono",monospace;font-size:10px;margin-top:3px}
+.schema-empty{color:#a6e3a1;text-align:center;padding:24px 12px;font-size:12px}
+.schema-syntax-error{color:#f38ba8;padding:10px;font-size:11px;line-height:1.5;background:rgba(243,139,168,.1);border-radius:5px}
+
+.diff-panel-item{padding:6px 10px;border-radius:4px;margin-bottom:4px;font-size:11px;cursor:pointer;border-left:3px solid #a6e3a1;background:rgba(166,227,161,.08)}
+.diff-panel-item.modified{border-left-color:#f9e2af;background:rgba(249,226,175,.08)}
+.diff-panel-item.removed{border-left-color:#f38ba8;background:rgba(243,139,168,.08)}
+.diff-panel-item:hover{background:#313244}
+.diff-panel-item .dp-type{font-weight:700;font-size:10px;margin-right:6px}
+.diff-panel-item.added .dp-type{color:#a6e3a1}
+.diff-panel-item.modified .dp-type{color:#f9e2af}
+.diff-panel-item.removed .dp-type{color:#f38ba8}
+.diff-panel-item .dp-path{color:#89b4fa;font-family:"JetBrains Mono",monospace;font-size:10px;margin-top:2px}
 
 main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
-
-#tree-container{flex:1;overflow:auto;padding:14px 18px;min-height:0}
-.json-tree{font-family:"JetBrains Mono","Fira Code",Consolas,monospace;font-size:13px;line-height:1.65;user-select:none}
-.json-tree ul{list-style:none;padding-left:22px;border-left:1px dashed #45475a;margin-left:10px}
+#tree-container{flex:1;overflow:auto;padding:12px 16px;min-height:0}
+.json-tree{font-family:"JetBrains Mono","Fira Code",Consolas,monospace;font-size:13px;line-height:1.6;user-select:none}
+.json-tree ul{list-style:none;padding-left:20px;border-left:1px dashed #45475a;margin-left:8px}
 .json-tree>ul{padding-left:0;border-left:none;margin-left:0}
 .tree-node{position:relative;padding:1px 4px;border-radius:4px;transition:background .15s}
-.tree-node:hover{background:rgba(137,180,250,.08)}
+.tree-node:hover{background:rgba(137,180,250,.07)}
 .tree-node.drag-over-top::before,.tree-node.drag-over-bottom::after{content:'';position:absolute;left:0;right:0;height:2px;background:#89b4fa;border-radius:2px}
 .tree-node.drag-over-top::before{top:0}
 .tree-node.drag-over-bottom::after{bottom:0}
 .tree-node.dragging{opacity:.4}
-.tree-node.search-highlight{background:rgba(249,226,175,.15);outline:1px solid rgba(249,226,175,.3);border-radius:4px}
-.tree-node.search-highlight-current{background:rgba(249,226,175,.3);outline:2px solid #f9e2af}
+.tree-node.search-highlight{background:rgba(249,226,175,.13);outline:1px solid rgba(249,226,175,.25);border-radius:4px}
+.tree-node.search-highlight-current{background:rgba(249,226,175,.28);outline:2px solid #f9e2af}
+.tree-node.diff-added{background:rgba(166,227,161,.12)}
+.tree-node.diff-modified{background:rgba(249,226,175,.12)}
+.tree-node.diff-removed{background:rgba(243,139,168,.12);opacity:.75}
+.tree-node.diff-removed .key,.tree-node.diff-removed .value{text-decoration:line-through}
+.diff-marker{width:4px;position:absolute;left:-6px;top:2px;bottom:2px;border-radius:2px}
+.diff-marker.added{background:#a6e3a1}
+.diff-marker.modified{background:#f9e2af}
+.diff-marker.removed{background:#f38ba8}
 
-.node-row{display:inline-flex;align-items:center;gap:5px;min-height:26px;width:100%}
-.toggle{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;cursor:pointer;border-radius:3px;transition:all .15s;flex-shrink:0;color:#7f849c}
+.node-row{display:inline-flex;align-items:center;gap:5px;min-height:24px;width:100%;position:relative}
+.toggle{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;cursor:pointer;border-radius:3px;transition:all .15s;flex-shrink:0;color:#7f849c}
 .toggle:hover{background:#45475a;color:#cdd6f4}
 .toggle.empty{visibility:hidden;cursor:default}
-.toggle svg{width:10px;height:10px;transition:transform .15s}
+.toggle svg{width:9px;height:9px;transition:transform .15s}
 .toggle.expanded svg{transform:rotate(90deg)}
-
 .key{color:#f9e2af;font-weight:500;cursor:default;position:relative}
+.key.array-index{color:#7f849c;font-weight:400;cursor:default}
+.key.array-index::after{content:':';color:#6c7086;margin-right:4px;margin-left:1px}
 .key::after{content:':';color:#6c7086;margin-right:4px;margin-left:1px}
 .key,.value{padding:1px 4px;border-radius:3px}
 .value{cursor:pointer;position:relative}
@@ -74,81 +110,99 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 .value.boolean{color:#cba6f7;font-weight:600}
 .value.null{color:#f38ba8;font-style:italic;font-weight:600}
 .value.object,.value.array{color:#89dceb}
-.value.error{background:rgba(243,139,168,.25)!important;outline:1px solid #f38ba8;animation:shake .3s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .bracket{color:#89dceb}
-
-.schema-badge{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;font-size:9px;font-weight:700;margin-left:3px;flex-shrink:0;cursor:help;position:relative}
+.schema-badge{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;font-size:9px;font-weight:700;margin-left:3px;flex-shrink:0;cursor:help;position:relative}
 .schema-badge.error{background:#f38ba8;color:#1e1e2e}
 .schema-badge.warning{background:#f9e2af;color:#1e1e2e}
 
-.editable-input{background:#313244;border:1px solid #89b4fa;color:inherit;font:inherit;padding:2px 6px;border-radius:4px;outline:none;min-width:100px}
-.editable-input:focus{box-shadow:0 0 0 2px rgba(137,180,250,.3)}
-.editable-input.invalid{border-color:#f38ba8;background:rgba(243,139,168,.15);box-shadow:0 0 0 2px rgba(243,139,168,.2)}
-.type-selector{background:#313244;border:1px solid #45475a;color:#cdd6f4;font:inherit;padding:2px 4px;border-radius:4px;margin-right:3px;cursor:pointer;font-size:12px}
-.key-input{background:#313244;border:1px solid #89b4fa;color:#f9e2af;font:inherit;padding:2px 6px;border-radius:4px;outline:none;width:140px}
-.key-input:focus{box-shadow:0 0 0 2px rgba(137,180,250,.3)}
+.editable-input{background:#313244;border:1px solid #89b4fa;color:inherit;font:inherit;padding:2px 6px;border-radius:4px;outline:none;min-width:90px}
+.editable-input:focus{box-shadow:0 0 0 2px rgba(137,180,250,.25)}
+.editable-input.invalid{border-color:#f38ba8;background:rgba(243,139,168,.12);box-shadow:0 0 0 2px rgba(243,139,168,.2)}
+.type-selector{background:#313244;border:1px solid #45475a;color:#cdd6f4;font:inherit;padding:2px 4px;border-radius:4px;margin-right:3px;cursor:pointer;font-size:11px}
+.key-input{background:#313244;border:1px solid #89b4fa;color:#f9e2af;font:inherit;padding:2px 6px;border-radius:4px;outline:none;width:130px}
+.key-input:focus{box-shadow:0 0 0 2px rgba(137,180,250,.25)}
 
-.edit-tooltip{position:absolute;bottom:100%;left:0;background:#f38ba8;color:#1e1e2e;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;z-index:100;white-space:nowrap;pointer-events:none;box-shadow:0 4px 12px rgba(243,139,168,.3);margin-bottom:4px}
-.edit-tooltip::after{content:'';position:absolute;top:100%;left:16px;border:5px solid transparent;border-top-color:#f38ba8}
+.edit-tooltip{position:absolute;bottom:100%;left:0;background:#f38ba8;color:#1e1e2e;padding:5px 9px;border-radius:5px;font-size:11px;font-weight:500;z-index:100;white-space:nowrap;pointer-events:none;box-shadow:0 4px 12px rgba(243,139,168,.3);margin-bottom:4px}
+.edit-tooltip::after{content:'';position:absolute;top:100%;left:14px;border:4px solid transparent;border-top-color:#f38ba8}
 .edit-tooltip .tt-path{font-family:"JetBrains Mono",monospace;font-size:10px;opacity:.8;display:block;margin-top:2px}
 
-.context-menu{position:fixed;background:#313244;border:1px solid #45475a;border-radius:8px;padding:6px;min-width:200px;z-index:10000;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-.context-menu-item{padding:7px 12px;border-radius:5px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px;transition:background .1s}
+.context-menu{position:fixed;background:#313244;border:1px solid #45475a;border-radius:7px;padding:5px;min-width:200px;z-index:10000;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.context-menu-item{padding:6px 11px;border-radius:5px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px;transition:background .1s}
 .context-menu-item:hover{background:#45475a}
 .context-menu-item.danger{color:#f38ba8}
-.context-menu-item.danger:hover{background:rgba(243,139,168,.15)}
-.context-menu-separator{height:1px;background:#45475a;margin:4px 6px}
-.context-menu-icon{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.context-menu-item.danger:hover{background:rgba(243,139,168,.13)}
+.context-menu-separator{height:1px;background:#45475a;margin:3px 5px}
+.context-menu-icon{width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
 
-.error-banner{position:fixed;top:60px;right:16px;background:#f38ba8;color:#1e1e2e;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(243,139,168,.4);animation:slideIn .3s;max-width:380px;word-break:break-all}
+.error-banner{position:fixed;top:56px;right:14px;background:#f38ba8;color:#1e1e2e;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(243,139,168,.35);animation:slideIn .3s;max-width:360px;word-break:break-all}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-.error-path{font-family:"JetBrains Mono",monospace;background:rgba(30,30,46,.2);padding:1px 5px;border-radius:3px;margin-top:3px;display:inline-block;font-size:11px}
+.error-path{font-family:"JetBrains Mono",monospace;background:rgba(30,30,46,.2);padding:1px 5px;border-radius:3px;margin-top:3px;display:inline-block;font-size:10px}
+.banner-success{background:#a6e3a1;color:#1e1e2e}
 
 .schema-panel{background:#181825;border-bottom:1px solid #45475a;flex-shrink:0;overflow:hidden;transition:max-height .3s;max-height:0}
-.schema-panel.open{max-height:260px}
-.schema-panel-inner{padding:10px 16px;display:flex;flex-direction:column;gap:8px}
-.schema-panel-inner textarea{background:#11111b;color:#cdd6f4;border:1px solid #45475a;border-radius:6px;padding:8px 12px;font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.5;resize:vertical;min-height:80px;max-height:160px;outline:none}
+.schema-panel.open{max-height:240px}
+.schema-panel-inner{padding:8px 14px;display:flex;flex-direction:column;gap:6px}
+.schema-panel-inner textarea{background:#11111b;color:#cdd6f4;border:1px solid #45475a;border-radius:5px;padding:6px 10px;font-family:"JetBrains Mono",monospace;font-size:11px;line-height:1.5;resize:vertical;min-height:70px;max-height:140px;outline:none}
 .schema-panel-inner textarea:focus{border-color:#89b4fa}
-.schema-panel-bar{display:flex;align-items:center;gap:8px}
+.schema-panel-bar{display:flex;align-items:center;gap:7px}
 .schema-status{font-size:11px;flex:1}
 .schema-status.ok{color:#a6e3a1}
 .schema-status.err{color:#f38ba8}
+.schema-toggle{font-size:11px;color:#7f849c;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.schema-toggle:hover{color:#cdd6f4}
 
-footer{background:#313244;border-top:1px solid #45475a;display:flex;flex-direction:column;flex-shrink:0;max-height:40%;min-height:100px}
-.footer-header{padding:6px 14px;background:#1e1e2e;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#7f849c;border-bottom:1px solid #45475a;gap:8px;flex-wrap:wrap}
+footer{background:#313244;border-top:1px solid #45475a;display:flex;flex-direction:column;flex-shrink:0;max-height:40%;min-height:90px}
+.footer-header{padding:5px 12px;background:#1e1e2e;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#7f849c;border-bottom:1px solid #45475a;gap:8px;flex-wrap:wrap}
 .footer-header span{font-weight:600;white-space:nowrap}
-.schema-summary{display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;padding:2px 8px;border-radius:4px;background:rgba(243,139,168,.15);color:#f38ba8;white-space:nowrap}
-.schema-summary:hover{background:rgba(243,139,168,.25)}
-.schema-summary.clean{background:rgba(166,227,161,.15);color:#a6e3a1}
-#raw-json{flex:1;background:#181825;color:#cdd6f4;border:none;padding:12px 16px;font-family:"JetBrains Mono","Fira Code",Consolas,monospace;font-size:12px;line-height:1.5;resize:none;outline:none;overflow:auto;white-space:pre}
+.footer-badges{display:flex;align-items:center;gap:5px}
+.footer-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;cursor:pointer;padding:2px 7px;border-radius:4px;background:rgba(243,139,168,.15);color:#f38ba8;white-space:nowrap;font-weight:600}
+.footer-badge:hover{background:rgba(243,139,168,.22)}
+.footer-badge.clean{background:rgba(166,227,161,.15);color:#a6e3a1;cursor:default}
+.footer-badge.diff{background:rgba(249,226,175,.15);color:#f9e2af}
+.footer-badge.diff:hover{background:rgba(249,226,175,.22)}
+.footer-badge.history{background:rgba(137,180,250,.15);color:#89b4fa}
+.footer-badge.history:hover{background:rgba(137,180,250,.22)}
+#raw-json{flex:1;background:#181825;color:#cdd6f4;border:none;padding:10px 14px;font-family:"JetBrains Mono","Fira Code",Consolas,monospace;font-size:12px;line-height:1.5;resize:none;outline:none;overflow:auto;white-space:pre}
 #raw-json:focus{background:#11111b}
-.resizer{height:4px;cursor:ns-resize;background:transparent;transition:background .2s;flex-shrink:0}
+.resizer{height:3px;cursor:ns-resize;background:transparent;transition:background .2s;flex-shrink:0}
 .resizer:hover,.resizer.active{background:#89b4fa}
+
+input[type=file]{display:none}
 </style>
 </head>
 <body>
 
 <header>
   <div class="toolbar-row">
-    <h1>JSON 可视化编辑器</h1>
-    <button class="btn btn-primary" id="btn-expand-all">展开全部</button>
-    <button class="btn" id="btn-collapse-all">折叠全部</button>
-    <button class="btn" id="btn-format">格式化</button>
-    <button class="btn btn-danger" id="btn-clear">清空</button>
-    <button class="btn" id="btn-sample">加载示例</button>
-    <span class="schema-toggle" id="schema-toggle">▶ Schema 校验</span>
+    <h1>JSON 配置工作台</h1>
+    <button class="btn" id="btn-open" title="打开 JSON 文件 (Ctrl+O)">📂 打开</button>
+    <button class="btn btn-primary" id="btn-save" title="保存 JSON (Ctrl+S)">💾 保存</button>
+    <button class="btn btn-success" id="btn-save-workspace" title="保存工作区">💼 保存工作区</button>
+    <button class="btn" id="btn-open-workspace" title="加载工作区">📁 加载工作区</button>
+    <div style="width:1px;height:20px;background:#45475a;margin:0 4px"></div>
+    <button class="btn btn-sm" id="btn-undo" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
+    <button class="btn btn-sm" id="btn-redo" title="重做 (Ctrl+Y)" disabled>↷ 重做</button>
+    <button class="btn btn-sm" id="btn-history" title="操作历史">📜 历史</button>
+    <div style="width:1px;height:20px;background:#45475a;margin:0 4px"></div>
+    <button class="btn btn-sm" id="btn-diff" title="与上次保存对比">🔍 对比</button>
+    <button class="btn btn-sm" id="btn-issues" title="Schema 问题列表">⚠ 问题</button>
+    <span class="schema-toggle" id="schema-toggle">▶ Schema</span>
     <span class="path-display" id="current-path">$</span>
   </div>
-  <div class="toolbar-secondary" id="search-row">
+  <div class="toolbar-row">
+    <button class="btn btn-sm" id="btn-expand-all">展开全部</button>
+    <button class="btn btn-sm" id="btn-collapse-all">折叠全部</button>
+    <button class="btn btn-sm" id="btn-format">格式化</button>
+    <button class="btn btn-sm btn-danger" id="btn-clear">清空</button>
+    <button class="btn btn-sm" id="btn-sample">示例</button>
     <div class="search-box" id="search-box">
       <span class="search-icon">🔍</span>
       <input type="text" id="search-input" placeholder="搜索键名、值或路径… (Ctrl+F)" spellcheck="false">
       <span class="search-badge" id="search-badge" style="display:none">0</span>
       <div class="search-results" id="search-results"></div>
     </div>
-    <button class="btn btn-sm" id="search-prev" title="上一个">↑</button>
-    <button class="btn btn-sm" id="search-next" title="下一个">↓</button>
+    <button class="btn btn-sm" id="search-prev" title="上一个 (Shift+Enter)">↑</button>
+    <button class="btn btn-sm" id="search-next" title="下一个 (Enter)">↓</button>
     <button class="btn btn-sm" id="search-clear">✕</button>
   </div>
 </header>
@@ -156,12 +210,12 @@ footer{background:#313244;border-top:1px solid #45475a;display:flex;flex-directi
 <div class="schema-panel" id="schema-panel">
   <div class="schema-panel-inner">
     <div class="schema-panel-bar">
-      <span style="font-size:12px;color:#7f849c">粘贴 JSON Schema 进行校验：</span>
+      <span style="font-size:11px;color:#7f849c">JSON Schema：</span>
       <button class="btn btn-sm btn-primary" id="btn-validate">校验</button>
-      <button class="btn btn-sm" id="btn-clear-schema">清空 Schema</button>
+      <button class="btn btn-sm" id="btn-clear-schema">清空</button>
       <span class="schema-status" id="schema-status"></span>
     </div>
-    <textarea id="schema-input" spellcheck="false" placeholder='在此粘贴 JSON Schema，例如：{"type":"object","required":["name"],"properties":{"name":{"type":"string"},"age":{"type":"number","minimum":0}}}'></textarea>
+    <textarea id="schema-input" spellcheck="false" placeholder='{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}}'></textarea>
   </div>
 </div>
 
@@ -172,16 +226,36 @@ footer{background:#313244;border-top:1px solid #45475a;display:flex;flex-directi
   <div class="resizer" id="resizer"></div>
   <footer>
     <div class="footer-header">
-      <span>📝 原始 JSON（可编辑同步到上方）</span>
-      <span class="schema-summary" id="schema-summary" style="display:none"></span>
+      <span>📝 原始 JSON（可编辑同步到上方树）</span>
+      <div class="footer-badges">
+        <span class="footer-badge history" id="badge-history" style="display:none">📜 0</span>
+        <span class="footer-badge diff" id="badge-diff" style="display:none">🔍 0 变更</span>
+        <span class="footer-badge" id="badge-issues" style="display:none">⚠ 0 问题</span>
+      </div>
       <span id="json-stats">-</span>
     </div>
     <textarea id="raw-json" spellcheck="false" placeholder='在此粘贴 JSON...'></textarea>
   </footer>
 </main>
 
+<div class="side-panels">
+  <div class="side-panel" id="history-panel">
+    <div class="panel-header">📜 操作历史<button class="panel-close" data-panel="history-panel">✕</button></div>
+    <div class="panel-body" id="history-body"><div class="history-empty">暂无操作记录</div></div>
+  </div>
+  <div class="side-panel" id="issues-panel">
+    <div class="panel-header">⚠ Schema 问题<button class="panel-close" data-panel="issues-panel">✕</button></div>
+    <div class="panel-body" id="issues-body"></div>
+  </div>
+  <div class="side-panel" id="diff-panel">
+    <div class="panel-header">🔍 差异对比<button class="panel-close" data-panel="diff-panel">✕</button></div>
+    <div class="panel-body" id="diff-body"></div>
+  </div>
+</div>
+
 <div class="context-menu" id="context-menu" style="display:none;"></div>
 <div id="error-container"></div>
+<input type="file" id="file-input" accept=".json,.json5,.workspace.json">
 
 <script>
 (function(){
@@ -191,29 +265,45 @@ var state = {
   data: null,
   expanded: new Set(['root']),
   schemaErrors: new Map(),
+  schemaSyntaxError: null,
   searchMatches: [],
   searchCurrentIdx: -1,
-  schema: null
+  schema: null,
+  savedSnapshot: null,
+  diffMap: new Map()
+};
+
+var history = {
+  stack: [],
+  index: -1,
+  maxSize: 100
 };
 
 var dragSrcPath = null;
 var dragSrcParent = null;
+var suppressHistory = false;
+var rawJsonInputTimer = null;
 
 var treeEl = document.getElementById('json-tree');
 var rawJsonEl = document.getElementById('raw-json');
 var statsEl = document.getElementById('json-stats');
 var pathEl = document.getElementById('current-path');
-var contextMenu = document.getElementById('context-menu');
+var contextMenuEl = document.getElementById('context-menu');
 var errorContainer = document.getElementById('error-container');
-var resizer = document.getElementById('resizer');
-var searchInput = document.getElementById('search-input');
-var searchResults = document.getElementById('search-results');
-var searchBadge = document.getElementById('search-badge');
-var searchRow = document.getElementById('search-row');
-var schemaPanel = document.getElementById('schema-panel');
-var schemaInput = document.getElementById('schema-input');
-var schemaStatus = document.getElementById('schema-status');
-var schemaSummary = document.getElementById('schema-summary');
+var resizerEl = document.getElementById('resizer');
+var searchInputEl = document.getElementById('search-input');
+var searchResultsEl = document.getElementById('search-results');
+var searchBadgeEl = document.getElementById('search-badge');
+var schemaPanelEl = document.getElementById('schema-panel');
+var schemaInputEl = document.getElementById('schema-input');
+var schemaStatusEl = document.getElementById('schema-status');
+var issuesBodyEl = document.getElementById('issues-body');
+var historyBodyEl = document.getElementById('history-body');
+var diffBodyEl = document.getElementById('diff-body');
+var badgeHistory = document.getElementById('badge-history');
+var badgeDiff = document.getElementById('badge-diff');
+var badgeIssues = document.getElementById('badge-issues');
+var fileInputEl = document.getElementById('file-input');
 
 var SAMPLE_JSON = {
   "name": "张三",
@@ -223,174 +313,97 @@ var SAMPLE_JSON = {
   "config.version": "1.0.0",
   "data[backup]": "含方括号的键名",
   "path/to/file": "/usr/local/bin",
-  "address": {
-    "city": "北京",
-    "district": "海淀区",
-    "street": "中关村大街 1 号",
-    "zip": "100080"
-  },
-  "hobbies": ["读书", "编程", "游泳"],
-  "scores": {
-    "数学": 95,
-    "语文": 88,
-    "英语": 92
-  },
+  "address": {"city":"北京","district":"海淀区","street":"中关村大街 1 号","zip":"100080"},
+  "hobbies": ["读书","编程","游泳"],
+  "scores": {"数学":95,"语文":88,"英语":92},
   "metadata": null,
   "friends": [
-    {"name": "李四", "age": 26, "contact": {"phone": "13800138000"}},
-    {"name": "王五", "age": 30, "contact": {"phone": "13900139000"}}
+    {"name":"李四","age":26,"contact":{"phone":"13800138000"}},
+    {"name":"王五","age":30,"contact":{"phone":"13900139000"}}
   ]
 };
 
-var SAMPLE_SCHEMA = {
-  "type": "object",
-  "required": ["name", "age", "email"],
-  "properties": {
-    "name": {"type": "string", "minLength": 1},
-    "age": {"type": "number", "minimum": 0, "maximum": 150},
-    "isStudent": {"type": "boolean"},
-    "email": {"type": "string", "pattern": "^[^@]+@[^@]+\\.[^@]+$"},
-    "address": {
-      "type": "object",
-      "required": ["city"],
-      "properties": {
-        "city": {"type": "string"},
-        "zip": {"type": "string", "pattern": "^\\d{6}$"}
-      }
-    },
-    "hobbies": {
-      "type": "array",
-      "items": {"type": "string"},
-      "minItems": 1
-    },
-    "scores": {
-      "type": "object",
-      "additionalProperties": {"type": "number"}
-    },
-    "metadata": {}
-  },
-  "additionalProperties": false
-};
-
-function escapeKeyForPath(k) {
-  return '["' + JSON.stringify(k).slice(1, -1) + '"]';
-}
-
+function escapeKeyForPath(k) { return '["' + JSON.stringify(k).slice(1,-1) + '"]'; }
 function buildPath(parent, key) {
   if (typeof key === 'number') return parent + '[' + key + ']';
   return parent + escapeKeyForPath(key);
 }
-
 function parsePath(path) {
   if (path === 'root') return [];
-  var result = [];
-  var i = 4;
+  var result = [], i = 4;
   while (i < path.length) {
     if (path[i] === '[') {
       i++;
       if (i < path.length && path[i] === '"') {
-        i++;
-        var key = '';
+        i++; var key = '';
         while (i < path.length) {
-          if (path[i] === '\\') {
-            key += path[i] + path[i + 1];
-            i += 2;
-          } else if (path[i] === '"') {
-            i++;
-            break;
-          } else {
-            key += path[i];
-            i++;
-          }
+          if (path[i] === '\\') { key += path[i] + path[i+1]; i += 2; }
+          else if (path[i] === '"') { i++; break; }
+          else { key += path[i]; i++; }
         }
         result.push(JSON.parse('"' + key + '"'));
         if (i < path.length && path[i] === ']') i++;
       } else {
         var num = '';
-        while (i < path.length && path[i] !== ']') {
-          num += path[i];
-          i++;
-        }
+        while (i < path.length && path[i] !== ']') { num += path[i]; i++; }
         result.push(Number(num));
         if (i < path.length) i++;
       }
-    } else {
-      i++;
-    }
+    } else i++;
   }
   return result;
 }
-
 function buildPathFromParts(parts) {
   var p = 'root';
-  for (var idx = 0; idx < parts.length; idx++) p = buildPath(p, parts[idx]);
+  for (var i = 0; i < parts.length; i++) p = buildPath(p, parts[i]);
   return p;
 }
-
 function getParentPath(path) {
   if (path === 'root') return null;
-  var parts = parsePath(path);
-  parts.pop();
+  var parts = parsePath(path); parts.pop();
   if (parts.length === 0) return 'root';
   return buildPathFromParts(parts);
 }
-
 function getKeyAtPath(path) {
   if (path === 'root') return null;
   var parts = parsePath(path);
   return parts[parts.length - 1];
 }
-
 function pathToDisplay(path) {
   if (path === 'root') return '$';
-  var parts = parsePath(path);
-  var s = '$';
-  for (var idx = 0; idx < parts.length; idx++) {
-    var p = parts[idx];
-    if (typeof p === 'number') {
-      s += '[' + p + ']';
-    } else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(p)) {
-      s += '.' + p;
-    } else {
-      s += '[' + JSON.stringify(p) + ']';
-    }
+  var parts = parsePath(path), s = '$';
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    if (typeof p === 'number') s += '[' + p + ']';
+    else if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(p)) s += '.' + p;
+    else s += '[' + JSON.stringify(p) + ']';
   }
   return s;
 }
-
 function getValueAtPath(path) {
   if (path === 'root') return state.data;
-  var parts = parsePath(path);
-  var current = state.data;
-  for (var idx = 0; idx < parts.length; idx++) current = current[parts[idx]];
-  return current;
+  var parts = parsePath(path), cur = state.data;
+  for (var i = 0; i < parts.length; i++) cur = cur[parts[i]];
+  return cur;
 }
-
 function setValueAtPath(path, value) {
   if (path === 'root') { state.data = value; return; }
-  var parts = parsePath(path);
-  var last = parts.pop();
-  var current = state.data;
-  for (var idx = 0; idx < parts.length; idx++) current = current[parts[idx]];
-  current[last] = value;
+  var parts = parsePath(path), last = parts.pop(), cur = state.data;
+  for (var i = 0; i < parts.length; i++) cur = cur[parts[i]];
+  cur[last] = value;
 }
-
 function deleteAtPath(path) {
   if (path === 'root') return;
-  var parts = parsePath(path);
-  var last = parts.pop();
-  var current = state.data;
-  for (var idx = 0; idx < parts.length; idx++) current = current[parts[idx]];
-  if (Array.isArray(current)) current.splice(Number(last), 1);
-  else delete current[last];
+  var parts = parsePath(path), last = parts.pop(), cur = state.data;
+  for (var i = 0; i < parts.length; i++) cur = cur[parts[i]];
+  if (Array.isArray(cur)) cur.splice(Number(last), 1);
+  else delete cur[last];
 }
-
 function getType(v) {
   if (v === null) return 'null';
   if (Array.isArray(v)) return 'array';
   return typeof v;
 }
-
 function parseValue(str, targetType) {
   str = str.trim();
   if (targetType === 'string') return str;
@@ -408,50 +421,129 @@ function parseValue(str, targetType) {
     throw new Error('null 值必须为 null');
   }
   if (targetType === 'array') {
-    try {
-      var v = JSON.parse(str);
-      if (!Array.isArray(v)) throw new Error('不是数组');
-      return v;
-    } catch(e) { throw new Error('无效的 JSON 数组'); }
+    try { var v = JSON.parse(str); if (!Array.isArray(v)) throw 0; return v; }
+    catch(e) { throw new Error('无效的 JSON 数组'); }
   }
   if (targetType === 'object') {
-    try {
-      var v2 = JSON.parse(str);
-      if (typeof v2 !== 'object' || Array.isArray(v2) || v2 === null) throw new Error('不是对象');
-      return v2;
-    } catch(e2) { throw new Error('无效的 JSON 对象'); }
+    try { var v2 = JSON.parse(str); if (typeof v2 !== 'object' || Array.isArray(v2) || v2 === null) throw 0; return v2; }
+    catch(e2) { throw new Error('无效的 JSON 对象'); }
   }
   return str;
 }
-
 function expandAllChildren(path, value) {
   if (value && typeof value === 'object') {
     state.expanded.add(path);
-    if (Array.isArray(value)) {
-      value.forEach(function(v, i) { expandAllChildren(buildPath(path, i), v); });
-    } else {
-      Object.keys(value).forEach(function(k) { expandAllChildren(buildPath(path, k), value[k]); });
-    }
+    if (Array.isArray(value)) value.forEach(function(v,i){expandAllChildren(buildPath(path,i),v)});
+    else Object.keys(value).forEach(function(k){expandAllChildren(buildPath(path,k),value[k])});
   }
 }
-
 function expandToPath(path) {
-  var parts = parsePath(path);
-  var p = 'root';
+  var parts = parsePath(path), p = 'root';
   state.expanded.add(p);
-  for (var idx = 0; idx < parts.length - 1; idx++) {
-    p = buildPath(p, parts[idx]);
+  for (var i = 0; i < parts.length - 1; i++) {
+    p = buildPath(p, parts[i]);
     state.expanded.add(p);
   }
 }
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
-function setData(data) {
-  state.data = data;
-  state.expanded = new Set(['root']);
-  expandAllChildren('root', data);
-  render();
-  syncRawJson();
-  if (state.schema) runSchemaValidation();
+function snapshot() {
+  return {
+    data: deepClone(state.data),
+    expanded: Array.from(state.expanded),
+    schema: state.schema ? deepClone(state.schema) : null,
+    schemaText: schemaInputEl.value,
+    search: searchInputEl.value
+  };
+}
+function restoreSnapshot(snap) {
+  state.data = deepClone(snap.data);
+  state.expanded = new Set(snap.expanded || ['root']);
+  state.schema = snap.schema ? deepClone(snap.schema) : null;
+  schemaInputEl.value = snap.schemaText || '';
+  if (snap.search !== undefined) searchInputEl.value = snap.search;
+  if (state.schema) runSchemaValidation(false);
+  else { state.schemaErrors.clear(); state.schemaSyntaxError = null; }
+}
+function pushHistory(label) {
+  if (suppressHistory) return;
+  var snap = snapshot();
+  if (history.index >= 0 && history.stack.length > history.index) {
+    history.stack = history.stack.slice(0, history.index + 1);
+  }
+  history.stack.push({
+    label: label || '编辑',
+    time: new Date(),
+    snapshot: snap
+  });
+  if (history.stack.length > history.maxSize) history.stack.shift();
+  history.index = history.stack.length - 1;
+  updateHistoryUI();
+  updateUndoRedoButtons();
+}
+function undo() {
+  if (history.index <= 0) return;
+  history.index--;
+  restoreSnapshot(history.stack[history.index].snapshot);
+  render(); syncRawJson(); applySearchIfNeeded();
+  updateHistoryUI(); updateUndoRedoButtons(); computeDiff();
+}
+function redo() {
+  if (history.index >= history.stack.length - 1) return;
+  history.index++;
+  restoreSnapshot(history.stack[history.index].snapshot);
+  render(); syncRawJson(); applySearchIfNeeded();
+  updateHistoryUI(); updateUndoRedoButtons(); computeDiff();
+}
+function updateUndoRedoButtons() {
+  document.getElementById('btn-undo').disabled = history.index <= 0;
+  document.getElementById('btn-redo').disabled = history.index >= history.stack.length - 1;
+}
+function updateHistoryUI() {
+  badgeHistory.style.display = history.stack.length > 0 ? 'inline-flex' : 'none';
+  badgeHistory.textContent = '📜 ' + history.stack.length;
+  if (history.stack.length === 0) {
+    historyBodyEl.innerHTML = '<div class="history-empty">暂无操作记录</div>';
+    return;
+  }
+  var html = '';
+  for (var i = history.stack.length - 1; i >= 0; i--) {
+    var item = history.stack[i];
+    var isCur = i === history.index;
+    var time = item.time.toLocaleTimeString('zh-CN', {hour12: false});
+    html += '<div class="history-item' + (isCur ? ' active' : '') + '" data-idx="' + i + '">' +
+      '<span class="h-icon">' + (isCur ? '●' : '○') + '</span>' +
+      '<span class="h-text">' + escapeHtml(item.label) + '</span>' +
+      '<span class="h-time">' + time + '</span></div>';
+  }
+  historyBodyEl.innerHTML = html;
+  historyBodyEl.querySelectorAll('.history-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var idx = parseInt(el.dataset.idx);
+      history.index = idx;
+      restoreSnapshot(history.stack[idx].snapshot);
+      render(); syncRawJson(); applySearchIfNeeded();
+      updateHistoryUI(); updateUndoRedoButtons(); computeDiff();
+      closeAllPanels();
+    });
+  });
+}
+function applySearchIfNeeded() {
+  var q = searchInputEl.value.trim();
+  if (q) performSearch(q);
+  else { state.searchMatches = []; state.searchCurrentIdx = -1; }
+}
+
+function setData(data, withHistory, label) {
+  if (withHistory) pushHistory(label || '加载数据');
+  else {
+    state.data = data;
+    state.expanded = new Set(['root']);
+  }
+  expandAllChildren('root', state.data);
+  render(); syncRawJson();
+  if (state.schema) runSchemaValidation(false);
+  computeDiff();
 }
 
 function render() {
@@ -459,6 +551,8 @@ function render() {
   renderNode(state.data, 'root', null, treeEl, true);
   updateStats();
   applySearchHighlights();
+  applyDiffHighlights();
+  updateIssuesList();
 }
 
 function renderNode(value, path, key, parent, isRoot) {
@@ -469,6 +563,14 @@ function renderNode(value, path, key, parent, isRoot) {
   nodeDiv.dataset.path = path;
   nodeDiv.dataset.type = type;
   if (key !== null) nodeDiv.dataset.key = String(key);
+
+  var diff = state.diffMap.get(path);
+  if (diff) {
+    nodeDiv.classList.add('diff-' + diff);
+    var marker = document.createElement('div');
+    marker.className = 'diff-marker ' + diff;
+    nodeDiv.appendChild(marker);
+  }
 
   var row = document.createElement('div');
   row.className = 'node-row';
@@ -485,36 +587,36 @@ function renderNode(value, path, key, parent, isRoot) {
 
   if (key !== null && !isRoot) {
     var keyEl = document.createElement('span');
-    keyEl.className = 'key';
-    keyEl.textContent = typeof key === 'number' ? String(key) : String(key);
+    var isArrayIdx = typeof key === 'number';
+    keyEl.className = 'key' + (isArrayIdx ? ' array-index' : '');
+    keyEl.textContent = String(key);
     keyEl.dataset.path = path;
-    (function(k, p, nd, tp) {
-      keyEl.addEventListener('dblclick', function(e) {
-        e.stopPropagation();
-        if (tp === 'array') return;
-        startEditKey(nd, k, p);
-      });
-    })(key, path, nodeDiv, type);
+    if (!isArrayIdx) {
+      (function(k, p, nd) {
+        keyEl.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          startEditKey(nd, k, p);
+        });
+      })(key, path, nodeDiv);
+    }
     row.appendChild(keyEl);
   }
 
   if (hasChildren) {
-    var bracketOpen = document.createElement('span');
-    bracketOpen.className = 'bracket';
-    bracketOpen.textContent = type === 'array' ? '[' : '{';
-    row.appendChild(bracketOpen);
-
+    var bo = document.createElement('span');
+    bo.className = 'bracket';
+    bo.textContent = type === 'array' ? '[' : '{';
+    row.appendChild(bo);
     if (!expanded && childCount > 0) {
-      var collapsedInfo = document.createElement('span');
-      collapsedInfo.style.cssText = 'color:#6c7086;font-size:11px;margin:0 2px';
-      collapsedInfo.textContent = childCount + ' 项';
-      row.appendChild(collapsedInfo);
+      var ci = document.createElement('span');
+      ci.style.cssText = 'color:#6c7086;font-size:10px;margin:0 2px';
+      ci.textContent = childCount + ' 项';
+      row.appendChild(ci);
     }
-
-    var bracketClose = document.createElement('span');
-    bracketClose.className = 'bracket';
-    bracketClose.textContent = type === 'array' ? ']' : '}';
-    row.appendChild(bracketClose);
+    var bc = document.createElement('span');
+    bc.className = 'bracket';
+    bc.textContent = type === 'array' ? ']' : '}';
+    row.appendChild(bc);
   } else {
     var valueEl = document.createElement('span');
     valueEl.className = 'value ' + type;
@@ -532,7 +634,8 @@ function renderNode(value, path, key, parent, isRoot) {
   var schemaErrs = state.schemaErrors.get(path);
   if (schemaErrs && schemaErrs.length > 0) {
     var badge = document.createElement('span');
-    badge.className = 'schema-badge ' + (schemaErrs.some(function(e){return e.severity==='error'}) ? 'error' : 'warning');
+    var hasError = schemaErrs.some(function(e){return e.severity==='error'});
+    badge.className = 'schema-badge ' + (hasError ? 'error' : 'warning');
     badge.textContent = '!';
     badge.title = schemaErrs.map(function(e){return e.message}).join('\n');
     row.appendChild(badge);
@@ -544,18 +647,13 @@ function renderNode(value, path, key, parent, isRoot) {
   if (hasChildren && expanded && childCount > 0) {
     var ul = document.createElement('ul');
     var entries;
-    if (Array.isArray(value)) {
-      entries = value.map(function(v, i) { return [i, v]; });
-    } else {
-      entries = Object.keys(value).map(function(k) { return [k, value[k]]; });
-    }
+    if (Array.isArray(value)) entries = value.map(function(v,i){return [i,v]});
+    else entries = Object.keys(value).map(function(k){return [k, value[k]]});
     for (var ei = 0; ei < entries.length; ei++) {
-      var ek = entries[ei][0], ev = entries[ei][1];
-      renderNode(ev, buildPath(path, ek), ek, ul, false);
+      renderNode(entries[ei][1], buildPath(path, entries[ei][0]), entries[ei][0], ul, false);
     }
     li.appendChild(ul);
   }
-
   parent.appendChild(li);
 
   if (hasChildren) {
@@ -572,29 +670,23 @@ function renderNode(value, path, key, parent, isRoot) {
 
   setupDragAndDrop(nodeDiv, path, type, isRoot);
   nodeDiv.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    showContextMenu(e.clientX, e.clientY, path, type, isRoot);
+    e.preventDefault(); e.stopPropagation();
+    showContextMenu(e.clientX, e.clientY, path, type, isRoot, typeof key === 'number');
   });
-
   return li;
 }
 
 function startEditValue(el, value, type, path) {
-  closeAllEdits();
   var container = document.createElement('span');
   container.style.cssText = 'display:inline-flex;align-items:center;position:relative';
-
   var typeSel = document.createElement('select');
   typeSel.className = 'type-selector';
   ['string','number','boolean','null','object','array'].forEach(function(t) {
-    var opt = document.createElement('option');
-    opt.value = t; opt.textContent = t;
+    var opt = document.createElement('option'); opt.value = t; opt.textContent = t;
     if (t === type) opt.selected = true;
     typeSel.appendChild(opt);
   });
   container.appendChild(typeSel);
-
   var input = document.createElement('input');
   input.className = 'editable-input';
   if (type === 'string') input.value = value;
@@ -602,593 +694,581 @@ function startEditValue(el, value, type, path) {
   else input.value = String(value);
   if (type === 'null') { input.value = 'null'; input.readOnly = true; }
   container.appendChild(input);
-
   var tooltip = document.createElement('div');
-  tooltip.className = 'edit-tooltip';
-  tooltip.style.display = 'none';
+  tooltip.className = 'edit-tooltip'; tooltip.style.display = 'none';
   container.appendChild(tooltip);
-
   el.replaceWith(container);
-  input.focus();
-  input.select();
+  input.focus(); input.select();
 
-  function showEditError(msg) {
-    tooltip.textContent = '';
-    tooltip.style.display = 'block';
-    var msgSpan = document.createElement('span');
-    msgSpan.textContent = '⚠ ' + msg;
-    tooltip.appendChild(msgSpan);
-    var pathSpan = document.createElement('span');
-    pathSpan.className = 'tt-path';
-    pathSpan.textContent = pathToDisplay(path);
-    tooltip.appendChild(pathSpan);
+  var prevSnapshot = snapshot();
+
+  function showErr(msg) {
+    tooltip.textContent = ''; tooltip.style.display = 'block';
+    var ms = document.createElement('span'); ms.textContent = '⚠ ' + msg; tooltip.appendChild(ms);
+    var ps = document.createElement('span'); ps.className = 'tt-path';
+    ps.textContent = pathToDisplay(path); tooltip.appendChild(ps);
     input.classList.add('invalid');
   }
-
-  function hideEditError() {
-    tooltip.style.display = 'none';
-    input.classList.remove('invalid');
-  }
-
+  function hideErr() { tooltip.style.display = 'none'; input.classList.remove('invalid'); }
   function commit() {
-    var newType = typeSel.value;
+    var nt = typeSel.value;
     try {
-      var newValue = parseValue(input.value, newType);
-      setValueAtPath(path, newValue);
-      hideEditError();
-      if (newType === 'object' || newType === 'array') {
-        expandAllChildren(path, newValue);
-      }
-      render();
-      syncRawJson();
-      if (state.schema) runSchemaValidation();
-    } catch (err) {
-      input.classList.add('invalid');
-      showEditError(err.message);
-    }
+      var nv = parseValue(input.value, nt);
+      var oldVal = getValueAtPath(path);
+      if (JSON.stringify(oldVal) === JSON.stringify(nv) && getType(oldVal) === nt) { render(); return; }
+      suppressHistory = true;
+      setValueAtPath(path, nv);
+      if (nt === 'object' || nt === 'array') expandAllChildren(path, nv);
+      suppressHistory = false;
+      pushHistory('编辑值 ' + pathToDisplay(path));
+      hideErr(); render(); syncRawJson();
+      if (state.schema) runSchemaValidation(false);
+      computeDiff();
+    } catch(err) { showErr(err.message); }
   }
-
   function cancel() { render(); }
 
   input.addEventListener('input', function() {
-    var newType = typeSel.value;
-    try {
-      parseValue(input.value, newType);
-      hideEditError();
-    } catch (err) {
-      showEditError(err.message);
-    }
+    try { parseValue(input.value, typeSel.value); hideErr(); }
+    catch(err) { showErr(err.message); }
   });
-
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); commit(); }
     else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
   });
-
   typeSel.addEventListener('change', function() {
     var t = typeSel.value;
     input.readOnly = t === 'null';
-    if (t === 'null') { input.value = 'null'; hideEditError(); }
+    if (t === 'null') { input.value = 'null'; hideErr(); }
     else if (t === 'boolean' && input.value !== 'true' && input.value !== 'false') input.value = 'true';
     else if (t === 'number' && input.value === '') input.value = '0';
     input.dispatchEvent(new Event('input'));
   });
-
-  var clickHandler = function(e) {
-    if (!container.contains(e.target)) { cancel(); document.removeEventListener('click', clickHandler); }
-  };
-  setTimeout(function() { document.addEventListener('click', clickHandler); }, 0);
-  container.addEventListener('click', function(e) { e.stopPropagation(); });
+  var ch = function(e) { if (!container.contains(e.target)) { cancel(); document.removeEventListener('click', ch); } };
+  setTimeout(function(){document.addEventListener('click', ch);}, 0);
+  container.addEventListener('click', function(e){e.stopPropagation()});
 }
 
 function startEditKey(nodeDiv, oldKey, path) {
+  var parentPath = getParentPath(path);
+  var parentValue = getValueAtPath(parentPath);
+  if (Array.isArray(parentValue)) return;
   var row = nodeDiv.querySelector('.node-row');
   var keyEl = row.querySelector('.key');
   if (!keyEl) return;
-
   var input = document.createElement('input');
-  input.className = 'key-input';
-  input.value = String(oldKey);
-  keyEl.replaceWith(input);
-  input.focus();
-  input.select();
-
-  var parentPath = getParentPath(path);
-  var parentValue = getValueAtPath(parentPath);
+  input.className = 'key-input'; input.value = String(oldKey);
+  keyEl.replaceWith(input); input.focus(); input.select();
 
   function commit() {
-    var newKey = input.value;
-    if (!newKey) { render(); return; }
-    if (newKey === String(oldKey)) { render(); return; }
-    if (Object.prototype.hasOwnProperty.call(parentValue, newKey)) {
-      showErrorBanner('键名已存在: ' + newKey, path);
-      return;
+    var nk = input.value;
+    if (!nk) { render(); return; }
+    if (nk === String(oldKey)) { render(); return; }
+    if (Object.prototype.hasOwnProperty.call(parentValue, nk)) {
+      showErrorBanner('键名已存在: ' + nk, path); return;
     }
     var entries = Object.entries(parentValue);
-    var idx = -1;
-    for (var i = 0; i < entries.length; i++) {
-      if (entries[i][0] === String(oldKey)) { idx = i; break; }
-    }
-    entries[idx] = [newKey, entries[idx][1]];
+    for (var i = 0; i < entries.length; i++) if (entries[i][0] === String(oldKey)) { entries[i] = [nk, entries[i][1]]; break; }
     var newObj = {};
     for (var j = 0; j < entries.length; j++) newObj[entries[j][0]] = entries[j][1];
+    suppressHistory = true;
     setValueAtPath(parentPath, newObj);
-    render();
-    syncRawJson();
-    if (state.schema) runSchemaValidation();
+    suppressHistory = false;
+    pushHistory('重命名键 ' + pathToDisplay(path));
+    render(); syncRawJson();
+    if (state.schema) runSchemaValidation(false);
+    computeDiff();
   }
-
   function cancel() { render(); }
-
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); commit(); }
     else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
   });
-
-  var clickHandler = function(e) {
-    if (e.target !== input) { cancel(); document.removeEventListener('click', clickHandler); }
-  };
-  setTimeout(function() { document.addEventListener('click', clickHandler); }, 0);
-  input.addEventListener('click', function(e) { e.stopPropagation(); });
+  var ch = function(e) { if (e.target !== input) { cancel(); document.removeEventListener('click', ch); } };
+  setTimeout(function(){document.addEventListener('click', ch);}, 0);
+  input.addEventListener('click', function(e){e.stopPropagation()});
 }
-
-function closeAllEdits() {}
 
 function setupDragAndDrop(nodeDiv, path, type, isRoot) {
   nodeDiv.draggable = !isRoot;
-
   nodeDiv.addEventListener('dragstart', function(e) {
     e.stopPropagation();
     if (isRoot) { e.preventDefault(); return; }
-    var parentPath = getParentPath(path);
-    if (!parentPath) { e.preventDefault(); return; }
-    dragSrcPath = path;
-    dragSrcParent = parentPath;
+    var pp = getParentPath(path);
+    if (!pp) { e.preventDefault(); return; }
+    dragSrcPath = path; dragSrcParent = pp;
     nodeDiv.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', path);
   });
-
   nodeDiv.addEventListener('dragend', function() {
     nodeDiv.classList.remove('dragging');
-    dragSrcPath = null;
-    dragSrcParent = null;
-    document.querySelectorAll('.tree-node').forEach(function(n) {
+    dragSrcPath = null; dragSrcParent = null;
+    document.querySelectorAll('.tree-node').forEach(function(n){
       n.classList.remove('drag-over-top','drag-over-bottom');
     });
   });
-
   nodeDiv.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     if (!dragSrcParent) return;
     var tgtParent = getParentPath(path);
     if (dragSrcParent !== tgtParent) return;
+    if (path === dragSrcPath) return;
+    if (path.startsWith(dragSrcPath + '[')) return;
     var rect = nodeDiv.getBoundingClientRect();
     var mid = rect.top + rect.height / 2;
     nodeDiv.classList.remove('drag-over-top','drag-over-bottom');
     nodeDiv.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
   });
-
   nodeDiv.addEventListener('dragleave', function(e) {
-    if (!nodeDiv.contains(e.relatedTarget)) {
-      nodeDiv.classList.remove('drag-over-top','drag-over-bottom');
-    }
+    if (!nodeDiv.contains(e.relatedTarget)) nodeDiv.classList.remove('drag-over-top','drag-over-bottom');
   });
-
   nodeDiv.addEventListener('drop', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     if (!dragSrcPath || dragSrcPath === path) return;
-
-    var srcParentPath = dragSrcParent;
-    var tgtParentPath = getParentPath(path);
-    if (srcParentPath !== tgtParentPath) return;
-
+    var spp = dragSrcParent;
+    var tpp = getParentPath(path);
+    if (spp !== tpp) return;
     if (path.startsWith(dragSrcPath + '[')) return;
-
     var rect = nodeDiv.getBoundingClientRect();
     var mid = rect.top + rect.height / 2;
     var insertBefore = e.clientY < mid;
-
     nodeDiv.classList.remove('drag-over-top','drag-over-bottom');
-
     var srcKey = getKeyAtPath(dragSrcPath);
     var tgtKey = getKeyAtPath(path);
-    var parent = getValueAtPath(srcParentPath);
+    var parent = getValueAtPath(spp);
     var isArray = Array.isArray(parent);
-
+    suppressHistory = true;
     if (isArray) {
-      var srcIdx = Number(srcKey);
-      var tgtIdx = Number(tgtKey);
-      var moved = parent[srcIdx];
-      parent.splice(srcIdx, 1);
-      if (srcIdx < tgtIdx) tgtIdx--;
-      var finalIdx = insertBefore ? tgtIdx : tgtIdx + 1;
-      parent.splice(finalIdx, 0, moved);
+      var si = Number(srcKey), ti = Number(tgtKey);
+      var moved = parent[si]; parent.splice(si, 1);
+      if (si < ti) ti--;
+      var fi = insertBefore ? ti : ti + 1;
+      parent.splice(fi, 0, moved);
     } else {
-      var srcK = String(srcKey);
-      var tgtK = String(tgtKey);
+      var sk = String(srcKey), tk = String(tgtKey);
       var keys = Object.keys(parent);
-      var srcIdx2 = -1;
-      for (var i = 0; i < keys.length; i++) { if (keys[i] === srcK) { srcIdx2 = i; break; } }
-      keys.splice(srcIdx2, 1);
-      var tgtIdx2 = -1;
-      for (var j = 0; j < keys.length; j++) { if (keys[j] === tgtK) { tgtIdx2 = j; break; } }
-      var finalIdx2 = insertBefore ? tgtIdx2 : tgtIdx2 + 1;
-      keys.splice(finalIdx2, 0, srcK);
-      var newObj = {};
-      for (var k = 0; k < keys.length; k++) newObj[keys[k]] = parent[keys[k]];
-      setValueAtPath(srcParentPath, newObj);
+      var si2 = -1; for (var i = 0; i < keys.length; i++) if (keys[i] === sk) { si2 = i; break; }
+      keys.splice(si2, 1);
+      var ti2 = -1; for (var j = 0; j < keys.length; j++) if (keys[j] === tk) { ti2 = j; break; }
+      var fi2 = insertBefore ? ti2 : ti2 + 1;
+      keys.splice(fi2, 0, sk);
+      var newObj = {}; for (var k = 0; k < keys.length; k++) newObj[keys[k]] = parent[keys[k]];
+      setValueAtPath(spp, newObj);
     }
-    render();
-    syncRawJson();
+    suppressHistory = false;
+    pushHistory('拖拽排序 ' + (isArray ? '数组' : '对象'));
+    render(); syncRawJson(); computeDiff();
   });
 }
 
-function showContextMenu(x, y, path, type, isRoot) {
+function showContextMenu(x, y, path, type, isRoot, isArrayIndex) {
   var items = [];
+  var parentType = isRoot ? null : getType(getValueAtPath(getParentPath(path)));
+  var parentIsArray = parentType === 'array';
 
-  if (!isRoot) {
-    items.push({label:'➕ 添加同级键值对', icon:'＋', action:function(){addSibling(path)}});
-  }
-  if (type === 'object') {
-    items.push({label:'➕ 添加子键值对', icon:'↳', action:function(){addChild(path,'object')}});
-  }
-  if (type === 'array') {
-    items.push({label:'➕ 添加子元素', icon:'↳', action:function(){addChild(path,'array')}});
-  }
+  if (!isRoot) items.push({label:'➕ 添加同级' + (parentIsArray ? '元素' : '键值对'), icon:'＋', action:function(){addSibling(path)}});
+  if (type === 'object') items.push({label:'➕ 添加子键值对', icon:'↳', action:function(){addChild(path,'object')}});
+  if (type === 'array') items.push({label:'➕ 添加子元素', icon:'↳', action:function(){addChild(path,'array')}});
   items.push({separator:true});
-  items.push({label:'📋 复制当前路径', icon:'⧉', action:function(){copyPath(path)}});
+  items.push({label:'📋 复制路径', icon:'⧉', action:function(){copyPath(path)}});
   items.push({label:'📋 复制 JSON 值', icon:'{ }', action:function(){copyJsonValue(path)}});
   if (!isRoot) {
     items.push({separator:true});
-    items.push({label:'🗑 删除该节点', icon:'✕', danger:true, action:function(){deleteNode(path)}});
+    items.push({label:'🗑 删除该' + (isArrayIndex ? '元素' : '节点'), icon:'✕', danger:true, action:function(){deleteNode(path)}});
   }
-
-  contextMenu.innerHTML = '';
+  contextMenuEl.innerHTML = '';
   items.forEach(function(item) {
     if (item.separator) {
-      var sep = document.createElement('div');
-      sep.className = 'context-menu-separator';
-      contextMenu.appendChild(sep);
+      var s = document.createElement('div'); s.className = 'context-menu-separator';
+      contextMenuEl.appendChild(s);
     } else {
-      var div = document.createElement('div');
-      div.className = 'context-menu-item' + (item.danger ? ' danger' : '');
-      div.innerHTML = '<span class="context-menu-icon">' + item.icon + '</span><span>' + item.label + '</span>';
-      div.addEventListener('click', function() { hideContextMenu(); item.action(); });
-      contextMenu.appendChild(div);
+      var d = document.createElement('div');
+      d.className = 'context-menu-item' + (item.danger ? ' danger' : '');
+      d.innerHTML = '<span class="context-menu-icon">' + item.icon + '</span><span>' + item.label + '</span>';
+      d.addEventListener('click', function() { hideContextMenu(); item.action(); });
+      contextMenuEl.appendChild(d);
     }
   });
-
-  contextMenu.style.display = 'block';
+  contextMenuEl.style.display = 'block';
   requestAnimationFrame(function() {
-    var rect = contextMenu.getBoundingClientRect();
+    var r = contextMenuEl.getBoundingClientRect();
     var vw = window.innerWidth, vh = window.innerHeight;
-    contextMenu.style.left = (x + rect.width > vw ? vw - rect.width - 10 : x) + 'px';
-    contextMenu.style.top = (y + rect.height > vh ? vh - rect.height - 10 : y) + 'px';
+    contextMenuEl.style.left = (x + r.width > vw ? vw - r.width - 8 : x) + 'px';
+    contextMenuEl.style.top = (y + r.height > vh ? vh - r.height - 8 : y) + 'px';
   });
 }
-
-function hideContextMenu() { contextMenu.style.display = 'none'; }
+function hideContextMenu() { contextMenuEl.style.display = 'none'; }
 
 function addSibling(path) {
   var parentPath = getParentPath(path);
   var parent = getValueAtPath(parentPath);
   var key = getKeyAtPath(path);
-
+  suppressHistory = true;
   if (Array.isArray(parent)) {
-    var idx = Number(key);
-    parent.splice(idx + 1, 0, '新元素');
+    parent.splice(Number(key) + 1, 0, '新元素');
   } else {
-    var newKey = 'newKey', counter = 1;
-    while (newKey in parent) newKey = 'newKey' + (++counter);
+    var nk = 'newKey', c = 1;
+    while (nk in parent) nk = 'newKey' + (++c);
     var keys = Object.keys(parent);
-    var tgtIdx = -1;
-    for (var i = 0; i < keys.length; i++) { if (keys[i] === String(key)) { tgtIdx = i; break; } }
-    var newObj = {};
-    for (var j = 0; j <= tgtIdx; j++) newObj[keys[j]] = parent[keys[j]];
-    newObj[newKey] = '新值';
-    for (var k = tgtIdx + 1; k < keys.length; k++) newObj[keys[k]] = parent[keys[k]];
-    setValueAtPath(parentPath, newObj);
+    var ti = -1; for (var i = 0; i < keys.length; i++) if (keys[i] === String(key)) { ti = i; break; }
+    var no = {};
+    for (var j = 0; j <= ti; j++) no[keys[j]] = parent[keys[j]];
+    no[nk] = '新值';
+    for (var k = ti + 1; k < keys.length; k++) no[keys[k]] = parent[keys[k]];
+    setValueAtPath(parentPath, no);
   }
+  suppressHistory = false;
+  pushHistory('添加同级' + (Array.isArray(parent) ? '元素' : '键'));
   state.expanded.add(parentPath);
-  render();
-  syncRawJson();
-  if (state.schema) runSchemaValidation();
+  render(); syncRawJson();
+  if (state.schema) runSchemaValidation(false);
+  computeDiff();
 }
 
-function addChild(path, parentType) {
+function addChild(path, pt) {
   var parent = getValueAtPath(path);
+  suppressHistory = true;
   state.expanded.add(path);
-  if (parentType === 'array') {
-    parent.push('新元素');
-  } else {
-    var newKey = 'newKey', counter = 1;
-    while (newKey in parent) newKey = 'newKey' + (++counter);
-    parent[newKey] = '新值';
+  if (pt === 'array') parent.push('新元素');
+  else {
+    var nk = 'newKey', c = 1;
+    while (nk in parent) nk = 'newKey' + (++c);
+    parent[nk] = '新值';
   }
-  render();
-  syncRawJson();
-  if (state.schema) runSchemaValidation();
+  suppressHistory = false;
+  pushHistory('添加子' + (pt === 'array' ? '元素' : '键值对'));
+  render(); syncRawJson();
+  if (state.schema) runSchemaValidation(false);
+  computeDiff();
 }
 
 function deleteNode(path) {
-  var display = pathToDisplay(path);
-  if (!confirm('确认删除节点: ' + display + ' ?')) return;
+  if (!confirm('确认删除节点: ' + pathToDisplay(path) + ' ?')) return;
+  suppressHistory = true;
   deleteAtPath(path);
-  render();
-  syncRawJson();
-  if (state.schema) runSchemaValidation();
+  suppressHistory = false;
+  pushHistory('删除节点 ' + pathToDisplay(path));
+  render(); syncRawJson();
+  if (state.schema) runSchemaValidation(false);
+  computeDiff();
 }
 
 function copyPath(path) {
-  var display = pathToDisplay(path);
-  navigator.clipboard.writeText(display).then(function() { showTemp('✓ 路径已复制: ' + display); });
+  var d = pathToDisplay(path);
+  navigator.clipboard.writeText(d).then(function(){showTemp('✓ 路径已复制: ' + d, true)});
 }
-
 function copyJsonValue(path) {
-  var val = getValueAtPath(path);
-  var str = JSON.stringify(val, null, 2);
-  navigator.clipboard.writeText(str).then(function() { showTemp('✓ JSON 值已复制'); });
+  var str = JSON.stringify(getValueAtPath(path), null, 2);
+  navigator.clipboard.writeText(str).then(function(){showTemp('✓ JSON 值已复制', true)});
 }
-
-function showTemp(msg) {
-  var banner = document.createElement('div');
-  banner.className = 'error-banner';
-  banner.style.background = '#a6e3a1';
-  banner.style.color = '#1e1e2e';
-  banner.textContent = msg;
-  errorContainer.appendChild(banner);
-  setTimeout(function() { banner.remove(); }, 2000);
+function showTemp(msg, success) {
+  var b = document.createElement('div');
+  b.className = 'error-banner' + (success ? ' banner-success' : '');
+  b.textContent = msg;
+  errorContainer.appendChild(b);
+  setTimeout(function(){b.remove();}, 2000);
 }
-
 function showErrorBanner(msg, path) {
   errorContainer.innerHTML = '';
-  var banner = document.createElement('div');
-  banner.className = 'error-banner';
-  banner.innerHTML = '<strong>⚠ 错误:</strong> ' + msg + '<br><span class="error-path">路径: ' + pathToDisplay(path) + '</span>';
-  errorContainer.appendChild(banner);
+  var b = document.createElement('div');
+  b.className = 'error-banner';
+  b.innerHTML = '<strong>⚠ 错误:</strong> ' + msg + '<br><span class="error-path">路径: ' + pathToDisplay(path) + '</span>';
+  errorContainer.appendChild(b);
 }
-
 function hideErrorBanner() { errorContainer.innerHTML = ''; }
 
 function syncRawJson() {
-  try {
-    rawJsonEl.value = JSON.stringify(state.data, null, 2);
-    rawJsonEl.style.color = '#cdd6f4';
-  } catch (e) {
-    rawJsonEl.style.color = '#f38ba8';
-  }
+  try { rawJsonEl.value = JSON.stringify(state.data, null, 2); rawJsonEl.style.color = '#cdd6f4'; }
+  catch(e) { rawJsonEl.style.color = '#f38ba8'; }
 }
 
 function updateStats() {
-  var count = 0;
-  function walk(v) {
-    count++;
+  var c = 0;
+  function w(v) {
+    c++;
     if (v && typeof v === 'object') {
-      if (Array.isArray(v)) v.forEach(walk);
-      else Object.values(v).forEach(walk);
+      if (Array.isArray(v)) v.forEach(w);
+      else Object.values(v).forEach(w);
     }
   }
-  walk(state.data);
+  w(state.data);
   var size = new Blob([JSON.stringify(state.data)]).size;
-  statsEl.textContent = '节点: ' + count + '  |  大小: ' + size + ' B';
-  updateSchemaSummary();
+  statsEl.textContent = '节点: ' + c + ' · 大小: ' + size + ' B';
 }
 
 function validateSchema(data, schema, path) {
   var errors = [];
   if (!schema || typeof schema !== 'object') return errors;
-
   if (schema.type) {
-    var actualType = getType(data);
-    var typeMatch = false;
+    var at = getType(data);
+    var tm = false;
     if (Array.isArray(schema.type)) {
-      typeMatch = schema.type.some(function(t) { return actualType === t || (t === 'integer' && actualType === 'number' && data % 1 === 0); });
+      tm = schema.type.some(function(t){return at === t || (t === 'integer' && at === 'number' && data % 1 === 0)});
     } else {
-      typeMatch = actualType === schema.type || (schema.type === 'integer' && actualType === 'number' && data % 1 === 0);
+      tm = at === schema.type || (schema.type === 'integer' && at === 'number' && data % 1 === 0);
     }
-    if (!typeMatch) {
-      errors.push({path: path, message: '类型应为 ' + schema.type + '，实际为 ' + actualType, severity: 'error'});
-    }
+    if (!tm) errors.push({path:path, message:'类型应为 ' + schema.type + '，实际为 ' + at, severity:'error'});
   }
-
-  if (schema.enum && schema.enum.indexOf(data) === -1) {
-    errors.push({path: path, message: '值不在允许的枚举范围内', severity: 'error'});
-  }
-
+  if (schema.enum && schema.enum.indexOf(data) === -1) errors.push({path:path, message:'值不在枚举范围内', severity:'error'});
   if (typeof data === 'number') {
-    if (schema.minimum !== undefined && data < schema.minimum) {
-      errors.push({path: path, message: '值 ' + data + ' 小于最小值 ' + schema.minimum, severity: 'error'});
-    }
-    if (schema.maximum !== undefined && data > schema.maximum) {
-      errors.push({path: path, message: '值 ' + data + ' 大于最大值 ' + schema.maximum, severity: 'error'});
-    }
-    if (schema.exclusiveMinimum !== undefined && data <= schema.exclusiveMinimum) {
-      errors.push({path: path, message: '值 ' + data + ' 不大于 ' + schema.exclusiveMinimum, severity: 'error'});
-    }
-    if (schema.exclusiveMaximum !== undefined && data >= schema.exclusiveMaximum) {
-      errors.push({path: path, message: '值 ' + data + ' 不小于 ' + schema.exclusiveMaximum, severity: 'error'});
-    }
+    if (schema.minimum !== undefined && data < schema.minimum) errors.push({path:path, message:'值 ' + data + ' < 最小值 ' + schema.minimum, severity:'error'});
+    if (schema.maximum !== undefined && data > schema.maximum) errors.push({path:path, message:'值 ' + data + ' > 最大值 ' + schema.maximum, severity:'error'});
   }
-
   if (typeof data === 'string') {
-    if (schema.minLength !== undefined && data.length < schema.minLength) {
-      errors.push({path: path, message: '字符串长度 ' + data.length + ' 小于最小长度 ' + schema.minLength, severity: 'error'});
-    }
-    if (schema.maxLength !== undefined && data.length > schema.maxLength) {
-      errors.push({path: path, message: '字符串长度 ' + data.length + ' 大于最大长度 ' + schema.maxLength, severity: 'error'});
-    }
+    if (schema.minLength !== undefined && data.length < schema.minLength) errors.push({path:path, message:'长度 ' + data.length + ' < 最小长度 ' + schema.minLength, severity:'error'});
+    if (schema.maxLength !== undefined && data.length > schema.maxLength) errors.push({path:path, message:'长度 ' + data.length + ' > 最大长度 ' + schema.maxLength, severity:'error'});
     if (schema.pattern) {
-      try {
-        var re = new RegExp(schema.pattern);
-        if (!re.test(data)) {
-          errors.push({path: path, message: '字符串不匹配模式 ' + schema.pattern, severity: 'error'});
-        }
-      } catch(e) {}
+      try { var re = new RegExp(schema.pattern); if (!re.test(data)) errors.push({path:path, message:'不匹配模式 ' + schema.pattern, severity:'error'}); }
+      catch(e) {}
     }
   }
-
   if (Array.isArray(data)) {
-    if (schema.minItems !== undefined && data.length < schema.minItems) {
-      errors.push({path: path, message: '数组长度 ' + data.length + ' 小于最小项数 ' + schema.minItems, severity: 'error'});
-    }
-    if (schema.maxItems !== undefined && data.length > schema.maxItems) {
-      errors.push({path: path, message: '数组长度 ' + data.length + ' 大于最大项数 ' + schema.maxItems, severity: 'error'});
-    }
+    if (schema.minItems !== undefined && data.length < schema.minItems) errors.push({path:path, message:'数组长度 ' + data.length + ' < 最小项数 ' + schema.minItems, severity:'error'});
+    if (schema.maxItems !== undefined && data.length > schema.maxItems) errors.push({path:path, message:'数组长度 ' + data.length + ' > 最大项数 ' + schema.maxItems, severity:'error'});
     if (schema.items && typeof schema.items === 'object') {
-      for (var i = 0; i < data.length; i++) {
-        var childErrors = validateSchema(data[i], schema.items, buildPath(path, i));
-        errors = errors.concat(childErrors);
-      }
+      for (var i = 0; i < data.length; i++) errors = errors.concat(validateSchema(data[i], schema.items, buildPath(path, i)));
     }
-    if (schema.uniqueItems && new Set(data).size !== data.length) {
-      errors.push({path: path, message: '数组包含重复项', severity: 'error'});
-    }
+    if (schema.uniqueItems && new Set(data).size !== data.length) errors.push({path:path, message:'数组含重复项', severity:'error'});
   }
-
   if (data && typeof data === 'object' && !Array.isArray(data)) {
     if (schema.required) {
       for (var ri = 0; ri < schema.required.length; ri++) {
-        var reqKey = schema.required[ri];
-        if (!Object.prototype.hasOwnProperty.call(data, reqKey)) {
-          errors.push({path: path, message: '缺少必填字段: ' + reqKey, severity: 'error'});
+        if (!Object.prototype.hasOwnProperty.call(data, schema.required[ri])) {
+          errors.push({path:path, message:'缺少必填字段: ' + schema.required[ri], severity:'error'});
         }
       }
     }
-
     if (schema.properties) {
-      var propKeys = Object.keys(schema.properties);
-      for (var pi = 0; pi < propKeys.length; pi++) {
-        var pk = propKeys[pi];
-        if (Object.prototype.hasOwnProperty.call(data, pk)) {
-          var propErrors = validateSchema(data[pk], schema.properties[pk], buildPath(path, pk));
-          errors = errors.concat(propErrors);
+      var pks = Object.keys(schema.properties);
+      for (var pi = 0; pi < pks.length; pi++) {
+        if (Object.prototype.hasOwnProperty.call(data, pks[pi])) {
+          errors = errors.concat(validateSchema(data[pks[pi]], schema.properties[pks[pi]], buildPath(path, pks[pi])));
         }
       }
     }
-
     if (schema.additionalProperties === false && schema.properties) {
-      var propSet = new Set(Object.keys(schema.properties));
-      var dataKeys = Object.keys(data);
-      for (var ai = 0; ai < dataKeys.length; ai++) {
-        if (!propSet.has(dataKeys[ai])) {
-          errors.push({path: buildPath(path, dataKeys[ai]), message: '不允许的额外属性: ' + dataKeys[ai], severity: 'warning'});
-        }
-      }
+      var ps = new Set(Object.keys(schema.properties));
+      var dks = Object.keys(data);
+      for (var ai = 0; ai < dks.length; ai++) if (!ps.has(dks[ai])) errors.push({path:buildPath(path, dks[ai]), message:'不允许的额外属性: ' + dks[ai], severity:'warning'});
     } else if (schema.additionalProperties && typeof schema.additionalProperties === 'object' && schema.properties) {
-      var propSet2 = new Set(Object.keys(schema.properties));
-      var dataKeys2 = Object.keys(data);
-      for (var aj = 0; aj < dataKeys2.length; aj++) {
-        if (!propSet2.has(dataKeys2[aj])) {
-          var addPropErrors = validateSchema(data[dataKeys2[aj]], schema.additionalProperties, buildPath(path, dataKeys2[aj]));
-          errors = errors.concat(addPropErrors);
-        }
-      }
+      var ps2 = new Set(Object.keys(schema.properties));
+      var dks2 = Object.keys(data);
+      for (var aj = 0; aj < dks2.length; aj++) if (!ps2.has(dks2[aj])) errors = errors.concat(validateSchema(data[dks2[aj]], schema.additionalProperties, buildPath(path, dks2[aj])));
     }
   }
-
   return errors;
 }
 
-function runSchemaValidation() {
+function runSchemaValidation(updateStatus) {
   state.schemaErrors.clear();
-  if (!state.schema) { render(); return; }
+  state.schemaSyntaxError = null;
+  if (!state.schema) { render(); updateIssuesList(); if (updateStatus !== false) updateSchemaStatus(); return; }
   var errors = validateSchema(state.data, state.schema, 'root');
   for (var i = 0; i < errors.length; i++) {
     var p = errors[i].path;
     if (!state.schemaErrors.has(p)) state.schemaErrors.set(p, []);
     state.schemaErrors.get(p).push(errors[i]);
   }
-  render();
-  updateSchemaSummary();
+  render(); updateIssuesList();
+  if (updateStatus !== false) updateSchemaStatus();
 }
 
-function updateSchemaSummary() {
+function updateSchemaStatus() {
+  if (!schemaInputEl.value.trim()) {
+    schemaStatusEl.textContent = ''; schemaStatusEl.className = 'schema-status'; return;
+  }
+  if (state.schemaSyntaxError) {
+    schemaStatusEl.textContent = '✗ Schema 语法错误';
+    schemaStatusEl.className = 'schema-status err'; return;
+  }
   if (!state.schema) {
-    schemaSummary.style.display = 'none';
+    schemaStatusEl.textContent = ''; schemaStatusEl.className = 'schema-status'; return;
+  }
+  var total = 0;
+  state.schemaErrors.forEach(function(v){total += v.length});
+  if (total === 0) { schemaStatusEl.textContent = '✓ 校验通过'; schemaStatusEl.className = 'schema-status ok'; }
+  else { schemaStatusEl.textContent = '✗ 发现 ' + total + ' 个问题'; schemaStatusEl.className = 'schema-status err'; }
+}
+
+function updateIssuesList() {
+  if (state.schemaSyntaxError) {
+    issuesBodyEl.innerHTML = '<div class="schema-syntax-error"><strong>⚠ Schema 语法错误</strong><br>' + escapeHtml(state.schemaSyntaxError) + '</div>';
+    badgeIssues.style.display = 'inline-flex';
+    badgeIssues.textContent = '⚠ 语法错误';
     return;
   }
-  schemaSummary.style.display = 'inline-flex';
-  var total = 0;
-  state.schemaErrors.forEach(function(v) { total += v.length; });
-  if (total === 0) {
-    schemaSummary.className = 'schema-summary clean';
-    schemaSummary.textContent = '✓ Schema 校验通过';
-  } else {
-    schemaSummary.className = 'schema-summary';
-    schemaSummary.textContent = '⚠ ' + total + ' 个 Schema 问题';
+  if (!state.schema) {
+    issuesBodyEl.innerHTML = '<div class="history-empty">请先粘贴并校验 Schema</div>';
+    badgeIssues.style.display = 'none'; return;
   }
+  var all = [];
+  state.schemaErrors.forEach(function(list){for(var i=0;i<list.length;i++) all.push(list[i])});
+  if (all.length === 0) {
+    issuesBodyEl.innerHTML = '<div class="schema-empty">✓ 无 Schema 问题</div>';
+    badgeIssues.style.display = 'inline-flex';
+    badgeIssues.className = 'footer-badge clean';
+    badgeIssues.textContent = '✓ 0 问题';
+    return;
+  }
+  badgeIssues.style.display = 'inline-flex';
+  badgeIssues.className = 'footer-badge';
+  badgeIssues.textContent = '⚠ ' + all.length + ' 问题';
+  var html = '';
+  for (var i = 0; i < all.length; i++) {
+    var e = all[i];
+    html += '<div class="schema-issue' + (e.severity === 'warning' ? ' warning' : '') + '" data-path="' + CSS.escape(e.path) + '">' +
+      '<div class="si-msg">' + escapeHtml(e.message) + '</div>' +
+      '<div class="si-path">' + escapeHtml(pathToDisplay(e.path)) + '</div></div>';
+  }
+  issuesBodyEl.innerHTML = html;
+  issuesBodyEl.querySelectorAll('.schema-issue').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var p = el.dataset.path;
+      navigateToPath(p);
+    });
+  });
 }
 
-schemaSummary.addEventListener('click', function() {
-  if (state.schemaErrors.size === 0) return;
-  var firstErrPath = state.schemaErrors.keys().next().value;
-  navigateToPath(firstErrPath);
-});
+function computeDiff() {
+  state.diffMap.clear();
+  if (!state.savedSnapshot) { updateDiffList(); return; }
+  diffRecursive(state.savedSnapshot, state.data, 'root');
+  applyDiffHighlights();
+  updateDiffList();
+}
+function diffRecursive(oldVal, newVal, path) {
+  var oldT = getType(oldVal), newT = getType(newVal);
+  if (oldT !== newT) { state.diffMap.set(path, 'modified'); return; }
+  if (oldT !== 'object' && oldT !== 'array') {
+    if (oldVal !== newVal) state.diffMap.set(path, 'modified');
+    return;
+  }
+  if (oldT === 'array' && newT === 'array') {
+    var changed = false;
+    var maxLen = Math.max(oldVal.length, newVal.length);
+    for (var i = 0; i < maxLen; i++) {
+      var cp = buildPath(path, i);
+      if (i >= oldVal.length) { state.diffMap.set(cp, 'added'); changed = true; }
+      else if (i >= newVal.length) { state.diffMap.set(cp, 'removed'); changed = true; }
+      else {
+        diffRecursive(oldVal[i], newVal[i], cp);
+        if (state.diffMap.has(cp)) changed = true;
+      }
+    }
+    if (changed && !state.diffMap.has(path)) state.diffMap.set(path, 'modified');
+    return;
+  }
+  var oldKeys = oldVal ? Object.keys(oldVal) : [];
+  var newKeys = newVal ? Object.keys(newVal) : [];
+  var allKeys = new Set(oldKeys.concat(newKeys));
+  var changed2 = false;
+  allKeys.forEach(function(k) {
+    var cp2 = buildPath(path, k);
+    var inOld = oldKeys.indexOf(k) !== -1;
+    var inNew = newKeys.indexOf(k) !== -1;
+    if (inOld && !inNew) { state.diffMap.set(cp2, 'removed'); changed2 = true; markDescRemoved(oldVal[k], cp2); }
+    else if (!inOld && inNew) { state.diffMap.set(cp2, 'added'); changed2 = true; }
+    else {
+      diffRecursive(oldVal[k], newVal[k], cp2);
+      if (state.diffMap.has(cp2)) changed2 = true;
+    }
+  });
+  if (changed2 && !state.diffMap.has(path)) state.diffMap.set(path, 'modified');
+}
+function markDescRemoved(val, path) {
+  if (val && typeof val === 'object') {
+    if (Array.isArray(val)) for (var i = 0; i < val.length; i++) {
+      var cp = buildPath(path, i);
+      state.diffMap.set(cp, 'removed');
+      markDescRemoved(val[i], cp);
+    } else {
+      var ks = Object.keys(val);
+      for (var j = 0; j < ks.length; j++) {
+        var cp2 = buildPath(path, ks[j]);
+        state.diffMap.set(cp2, 'removed');
+        markDescRemoved(val[ks[j]], cp2);
+      }
+    }
+  }
+}
+function applyDiffHighlights() {
+  document.querySelectorAll('.tree-node').forEach(function(n) {
+    n.classList.remove('diff-added','diff-modified','diff-removed');
+    var dm = n.querySelector('.diff-marker');
+    if (dm) dm.remove();
+  });
+  if (!state.savedSnapshot) return;
+  state.diffMap.forEach(function(type, path) {
+    var n = document.querySelector('.tree-node[data-path="' + CSS.escape(path) + '"]');
+    if (!n) return;
+    n.classList.add('diff-' + type);
+    if (!n.querySelector('.diff-marker')) {
+      var m = document.createElement('div');
+      m.className = 'diff-marker ' + type;
+      n.insertBefore(m, n.firstChild);
+    }
+  });
+}
+function updateDiffList() {
+  if (!state.savedSnapshot) {
+    diffBodyEl.innerHTML = '<div class="history-empty">尚未保存基准版本<br>点击「💾 保存」后即可对比</div>';
+    badgeDiff.style.display = 'none'; return;
+  }
+  var entries = [];
+  state.diffMap.forEach(function(type, path){entries.push({type:type, path:path})});
+  if (entries.length === 0) {
+    diffBodyEl.innerHTML = '<div class="schema-empty">✓ 与上次保存完全一致</div>';
+    badgeDiff.style.display = 'inline-flex';
+    badgeDiff.textContent = '🔍 无变更';
+    return;
+  }
+  badgeDiff.style.display = 'inline-flex';
+  badgeDiff.textContent = '🔍 ' + entries.length + ' 变更';
+  var html = '';
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    var label = e.type === 'added' ? '新增' : (e.type === 'modified' ? '修改' : '删除');
+    html += '<div class="diff-panel-item ' + e.type + '" data-path="' + CSS.escape(e.path) + '">' +
+      '<span class="dp-type">' + label + '</span>' +
+      '<span class="dp-path">' + escapeHtml(pathToDisplay(e.path)) + '</span></div>';
+  }
+  diffBodyEl.innerHTML = html;
+  diffBodyEl.querySelectorAll('.diff-panel-item').forEach(function(el) {
+    el.addEventListener('click', function() { navigateToPath(el.dataset.path); });
+  });
+}
 
 var searchDebounceTimer = null;
-
 function performSearch(query) {
-  state.searchMatches = [];
-  state.searchCurrentIdx = -1;
+  state.searchMatches = []; state.searchCurrentIdx = -1;
   if (!query) {
-    searchResults.classList.remove('show');
-    searchBadge.style.display = 'none';
-    applySearchHighlights();
-    return;
+    searchResultsEl.classList.remove('show'); searchBadgeEl.style.display = 'none';
+    applySearchHighlights(); return;
   }
-
   var lq = query.toLowerCase();
   var results = [];
-
   function walk(value, path, key) {
+    if (results.length >= 200) return;
     var display = pathToDisplay(path);
     var keyStr = key !== null ? String(key) : '';
     var valStr = value === null ? 'null' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
-    var matched = false;
-
-    if (keyStr.toLowerCase().indexOf(lq) !== -1) matched = true;
-    if (valStr.toLowerCase().indexOf(lq) !== -1) matched = true;
-    if (display.toLowerCase().indexOf(lq) !== -1) matched = true;
-
-    if (matched) {
-      results.push({
-        path: path,
-        key: keyStr,
-        preview: valStr.length > 60 ? valStr.substring(0, 60) + '…' : valStr,
-        display: display
-      });
-      if (results.length >= 200) return;
+    if (keyStr.toLowerCase().indexOf(lq) !== -1 || valStr.toLowerCase().indexOf(lq) !== -1 || display.toLowerCase().indexOf(lq) !== -1) {
+      results.push({path:path, key:keyStr, preview:valStr.length > 55 ? valStr.substring(0,55) + '…' : valStr, display:display});
     }
-
     if (value && typeof value === 'object' && results.length < 200) {
-      var entries;
-      if (Array.isArray(value)) {
-        entries = value.map(function(v, i) { return [i, v]; });
-      } else {
-        entries = Object.keys(value).map(function(k) { return [k, value[k]]; });
-      }
-      for (var i = 0; i < entries.length && results.length < 200; i++) {
-        walk(entries[i][1], buildPath(path, entries[i][0]), entries[i][0]);
-      }
+      var entries = Array.isArray(value)
+        ? value.map(function(v,i){return [i,v]})
+        : Object.keys(value).map(function(k){return [k,value[k]]});
+      for (var i = 0; i < entries.length && results.length < 200; i++) walk(entries[i][1], buildPath(path, entries[i][0]), entries[i][0]);
     }
   }
-
   walk(state.data, 'root', null);
   state.searchMatches = results;
-
-  searchBadge.style.display = results.length > 0 ? 'inline' : 'none';
-  searchBadge.textContent = results.length;
-
-  searchResults.innerHTML = '';
-  if (results.length === 0) {
-    searchResults.classList.remove('show');
-    applySearchHighlights();
-    return;
-  }
-
+  searchBadgeEl.style.display = results.length > 0 ? 'inline' : 'none';
+  searchBadgeEl.textContent = results.length;
+  searchResultsEl.innerHTML = '';
+  if (results.length === 0) { searchResultsEl.classList.remove('show'); applySearchHighlights(); return; }
   for (var i = 0; i < results.length; i++) {
     (function(r, idx) {
       var item = document.createElement('div');
@@ -1199,13 +1279,12 @@ function performSearch(query) {
         state.searchCurrentIdx = idx;
         applySearchHighlights();
       });
-      searchResults.appendChild(item);
+      searchResultsEl.appendChild(item);
     })(results[i], i);
   }
-  searchResults.classList.add('show');
+  searchResultsEl.classList.add('show');
   applySearchHighlights();
 }
-
 function applySearchHighlights() {
   document.querySelectorAll('.tree-node').forEach(function(n) {
     n.classList.remove('search-highlight','search-highlight-current');
@@ -1216,14 +1295,10 @@ function applySearchHighlights() {
     if (node) node.classList.add('search-highlight');
   }
   if (state.searchCurrentIdx >= 0 && state.searchCurrentIdx < state.searchMatches.length) {
-    var curNode = document.querySelector('.tree-node[data-path="' + CSS.escape(state.searchMatches[state.searchCurrentIdx].path) + '"]');
-    if (curNode) {
-      curNode.classList.add('search-highlight-current');
-      curNode.scrollIntoView({behavior:'smooth', block:'center'});
-    }
+    var cur = document.querySelector('.tree-node[data-path="' + CSS.escape(state.searchMatches[state.searchCurrentIdx].path) + '"]');
+    if (cur) { cur.classList.add('search-highlight-current'); cur.scrollIntoView({behavior:'smooth', block:'center'}); }
   }
 }
-
 function navigateToPath(path) {
   expandToPath(path);
   render();
@@ -1233,222 +1308,283 @@ function navigateToPath(path) {
       node.scrollIntoView({behavior:'smooth', block:'center'});
       node.style.transition = 'background .3s';
       node.style.background = 'rgba(137,180,250,0.2)';
-      setTimeout(function() { node.style.background = ''; }, 1500);
+      setTimeout(function(){node.style.background = '';}, 1400);
     }
   });
 }
+function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-function escapeHtml(s) {
-  var div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
-}
-
-function init() {
-  setData(JSON.parse(JSON.stringify(SAMPLE_JSON)));
-  bindEvents();
+function closeAllPanels() {
+  document.querySelectorAll('.side-panel').forEach(function(p){p.classList.remove('open')});
 }
 
 function bindEvents() {
-  document.addEventListener('click', function() {
-    hideContextMenu();
-    pathEl.textContent = '$';
-  });
-
+  document.addEventListener('click', function() { hideContextMenu(); pathEl.textContent = '$'; });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-      hideContextMenu();
-      hideErrorBanner();
-      searchResults.classList.remove('show');
+      hideContextMenu(); hideErrorBanner(); searchResultsEl.classList.remove('show'); closeAllPanels();
     }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      e.preventDefault();
-      searchRow.classList.add('show');
-      searchInput.focus();
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+      e.preventDefault(); searchInputEl.focus(); searchInputEl.select();
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+      e.preventDefault(); undo();
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+      e.preventDefault(); redo();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault(); saveCurrentJson();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
+      e.preventDefault(); fileInputEl.click();
     }
   });
-
   treeEl.addEventListener('mousemove', function(e) {
-    var node = e.target.closest('.tree-node');
-    if (node) pathEl.textContent = pathToDisplay(node.dataset.path);
+    var n = e.target.closest('.tree-node');
+    if (n) pathEl.textContent = pathToDisplay(n.dataset.path);
   });
 
   rawJsonEl.addEventListener('input', function() {
-    try {
-      var parsed = JSON.parse(rawJsonEl.value);
-      state.data = parsed;
-      rawJsonEl.style.color = '#cdd6f4';
-      state.expanded = new Set(['root']);
-      expandAllChildren('root', state.data);
-      render();
-      hideErrorBanner();
-      if (state.schema) runSchemaValidation();
-    } catch (err) {
-      rawJsonEl.style.color = '#f38ba8';
-      showErrorBanner('JSON 语法错误: ' + err.message, 'root');
-    }
+    clearTimeout(rawJsonInputTimer);
+    rawJsonInputTimer = setTimeout(function() {
+      try {
+        var parsed = JSON.parse(rawJsonEl.value);
+        suppressHistory = true;
+        state.data = parsed;
+        state.expanded = new Set(['root']);
+        expandAllChildren('root', state.data);
+        suppressHistory = false;
+        pushHistory('从原始 JSON 更新');
+        rawJsonEl.style.color = '#cdd6f4';
+        render();
+        hideErrorBanner();
+        if (state.schema) runSchemaValidation(false);
+        computeDiff();
+      } catch(err) {
+        rawJsonEl.style.color = '#f38ba8';
+      }
+    }, 600);
+  });
+  rawJsonEl.addEventListener('blur', function() {
+    try { JSON.parse(rawJsonEl.value); hideErrorBanner(); }
+    catch(err) { showErrorBanner('JSON 语法错误: ' + err.message, 'root'); }
   });
 
   document.getElementById('btn-expand-all').addEventListener('click', function() {
-    state.expanded = new Set(['root']);
-    expandAllChildren('root', state.data);
-    render();
+    state.expanded = new Set(['root']); expandAllChildren('root', state.data); render();
   });
-
   document.getElementById('btn-collapse-all').addEventListener('click', function() {
-    state.expanded = new Set();
-    render();
+    state.expanded = new Set(); render();
   });
-
   document.getElementById('btn-format').addEventListener('click', function() {
     try {
       state.data = JSON.parse(rawJsonEl.value);
-      state.expanded = new Set(['root']);
-      expandAllChildren('root', state.data);
-      render();
-      syncRawJson();
-      showTemp('✓ 已格式化');
-    } catch (err) {
-      showErrorBanner('无法格式化: ' + err.message, 'root');
-    }
+      state.expanded = new Set(['root']); expandAllChildren('root', state.data);
+      render(); syncRawJson(); showTemp('✓ 已格式化', true);
+    } catch(err) { showErrorBanner('无法格式化: ' + err.message, 'root'); }
   });
-
   document.getElementById('btn-clear').addEventListener('click', function() {
     if (!confirm('确认清空所有数据?')) return;
-    setData({});
+    setData({}, true, '清空数据');
   });
-
   document.getElementById('btn-sample').addEventListener('click', function() {
-    setData(JSON.parse(JSON.stringify(SAMPLE_JSON)));
-    showTemp('✓ 已加载示例数据（含特殊键名）');
+    setData(JSON.parse(JSON.stringify(SAMPLE_JSON)), true, '加载示例数据');
+    showTemp('✓ 已加载示例数据（含特殊键名）', true);
   });
-
   document.getElementById('schema-toggle').addEventListener('click', function() {
-    schemaPanel.classList.toggle('open');
-    this.textContent = schemaPanel.classList.contains('open') ? '▼ Schema 校验' : '▶ Schema 校验';
+    schemaPanelEl.classList.toggle('open');
+    this.textContent = schemaPanelEl.classList.contains('open') ? '▼ Schema' : '▶ Schema';
   });
-
   document.getElementById('btn-validate').addEventListener('click', function() {
-    var schemaText = schemaInput.value.trim();
-    if (!schemaText) {
-      state.schema = null;
-      state.schemaErrors.clear();
-      schemaStatus.textContent = '';
-      schemaStatus.className = 'schema-status';
-      render();
-      return;
+    var text = schemaInputEl.value.trim();
+    if (!text) {
+      state.schema = null; state.schemaErrors.clear(); state.schemaSyntaxError = null;
+      schemaStatusEl.textContent = ''; schemaStatusEl.className = 'schema-status';
+      render(); return;
     }
     try {
-      state.schema = JSON.parse(schemaText);
+      state.schema = JSON.parse(text);
+      state.schemaSyntaxError = null;
       runSchemaValidation();
-      var total = 0;
-      state.schemaErrors.forEach(function(v) { total += v.length; });
-      if (total === 0) {
-        schemaStatus.textContent = '✓ 校验通过';
-        schemaStatus.className = 'schema-status ok';
-      } else {
-        schemaStatus.textContent = '✗ 发现 ' + total + ' 个问题';
-        schemaStatus.className = 'schema-status err';
-      }
-    } catch (err) {
-      schemaStatus.textContent = '✗ Schema 语法错误: ' + err.message;
-      schemaStatus.className = 'schema-status err';
+    } catch(err) {
+      state.schema = null;
+      state.schemaErrors.clear();
+      state.schemaSyntaxError = err.message;
+      schemaStatusEl.textContent = '✗ Schema 语法错误';
+      schemaStatusEl.className = 'schema-status err';
+      render();
     }
   });
-
   document.getElementById('btn-clear-schema').addEventListener('click', function() {
-    schemaInput.value = '';
-    state.schema = null;
-    state.schemaErrors.clear();
-    schemaStatus.textContent = '';
-    schemaStatus.className = 'schema-status';
+    schemaInputEl.value = ''; state.schema = null;
+    state.schemaErrors.clear(); state.schemaSyntaxError = null;
+    schemaStatusEl.textContent = ''; schemaStatusEl.className = 'schema-status';
     render();
   });
 
-  searchInput.addEventListener('input', function() {
+  searchInputEl.addEventListener('input', function() {
     clearTimeout(searchDebounceTimer);
-    var q = searchInput.value.trim();
-    if (!q) {
-      performSearch('');
-      return;
-    }
-    searchDebounceTimer = setTimeout(function() { performSearch(q); }, 250);
+    var q = searchInputEl.value.trim();
+    if (!q) { performSearch(''); return; }
+    searchDebounceTimer = setTimeout(function(){performSearch(q);}, 250);
   });
-
-  searchInput.addEventListener('keydown', function(e) {
+  searchInputEl.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (state.searchMatches.length === 0) return;
-      if (e.shiftKey) {
-        state.searchCurrentIdx = (state.searchCurrentIdx - 1 + state.searchMatches.length) % state.searchMatches.length;
-      } else {
-        state.searchCurrentIdx = (state.searchCurrentIdx + 1) % state.searchMatches.length;
-      }
+      if (e.shiftKey) state.searchCurrentIdx = (state.searchCurrentIdx - 1 + state.searchMatches.length) % state.searchMatches.length;
+      else state.searchCurrentIdx = (state.searchCurrentIdx + 1) % state.searchMatches.length;
       navigateToPath(state.searchMatches[state.searchCurrentIdx].path);
       applySearchHighlights();
     }
-    if (e.key === 'Escape') {
-      searchInput.value = '';
-      performSearch('');
-      searchResults.classList.remove('show');
-    }
+    if (e.key === 'Escape') { searchInputEl.value = ''; performSearch(''); searchResultsEl.classList.remove('show'); }
   });
-
   document.getElementById('search-prev').addEventListener('click', function() {
     if (state.searchMatches.length === 0) return;
     state.searchCurrentIdx = (state.searchCurrentIdx - 1 + state.searchMatches.length) % state.searchMatches.length;
     navigateToPath(state.searchMatches[state.searchCurrentIdx].path);
     applySearchHighlights();
   });
-
   document.getElementById('search-next').addEventListener('click', function() {
     if (state.searchMatches.length === 0) return;
     state.searchCurrentIdx = (state.searchCurrentIdx + 1) % state.searchMatches.length;
     navigateToPath(state.searchMatches[state.searchCurrentIdx].path);
     applySearchHighlights();
   });
-
   document.getElementById('search-clear').addEventListener('click', function() {
-    searchInput.value = '';
-    performSearch('');
-    searchResults.classList.remove('show');
-    searchBadge.style.display = 'none';
+    searchInputEl.value = ''; performSearch(''); searchResultsEl.classList.remove('show'); searchBadgeEl.style.display = 'none';
+  });
+  document.addEventListener('click', function(e) {
+    if (!document.getElementById('search-box').contains(e.target)) searchResultsEl.classList.remove('show');
   });
 
-  document.addEventListener('click', function(e) {
-    if (!document.getElementById('search-box').contains(e.target)) {
-      searchResults.classList.remove('show');
-    }
+  document.getElementById('btn-undo').addEventListener('click', undo);
+  document.getElementById('btn-redo').addEventListener('click', redo);
+  document.getElementById('btn-history').addEventListener('click', function() {
+    closeAllPanels(); document.getElementById('history-panel').classList.add('open');
   });
+  document.getElementById('btn-issues').addEventListener('click', function() {
+    closeAllPanels(); document.getElementById('issues-panel').classList.add('open');
+  });
+  document.getElementById('btn-diff').addEventListener('click', function() {
+    closeAllPanels(); document.getElementById('diff-panel').classList.add('open');
+  });
+  document.querySelectorAll('.panel-close').forEach(function(b) {
+    b.addEventListener('click', function() { document.getElementById(b.dataset.panel).classList.remove('open'); });
+  });
+  badgeIssues.addEventListener('click', function() {
+    closeAllPanels(); document.getElementById('issues-panel').classList.add('open');
+  });
+  badgeHistory.addEventListener('click', function() {
+    closeAllPanels(); document.getElementById('history-panel').classList.add('open');
+  });
+  badgeDiff.addEventListener('click', function() {
+    closeAllPanels(); document.getElementById('diff-panel').classList.add('open');
+  });
+
+  document.getElementById('btn-open').addEventListener('click', function(){fileInputEl.click()});
+  fileInputEl.addEventListener('change', function(e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var text = reader.result;
+        var isWorkspace = f.name.endsWith('.workspace.json');
+        if (isWorkspace) {
+          var ws = JSON.parse(text);
+          if (!ws || typeof ws !== 'object' || ws.__type !== 'json-workspace') throw new Error('无效的工作区文件');
+          suppressHistory = true;
+          state.data = ws.data || {};
+          state.expanded = new Set(ws.expanded || ['root']);
+          state.schema = ws.schema || null;
+          schemaInputEl.value = ws.schemaText || '';
+          searchInputEl.value = ws.search || '';
+          state.savedSnapshot = ws.savedSnapshot || null;
+          suppressHistory = false;
+          pushHistory('加载工作区: ' + f.name);
+          if (state.schema) runSchemaValidation(false);
+          else { state.schemaErrors.clear(); state.schemaSyntaxError = null; }
+          render(); syncRawJson(); applySearchIfNeeded(); computeDiff();
+          showTemp('✓ 工作区已加载: ' + f.name, true);
+        } else {
+          var data = JSON.parse(text);
+          setData(data, true, '打开文件: ' + f.name);
+          showTemp('✓ 文件已加载: ' + f.name, true);
+        }
+      } catch(err) {
+        showErrorBanner('加载失败: ' + err.message, 'root');
+      }
+      fileInputEl.value = '';
+    };
+    reader.readAsText(f);
+  });
+
+  function saveCurrentJson() {
+    var blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'data.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    state.savedSnapshot = deepClone(state.data);
+    computeDiff();
+    showTemp('✓ 已保存为 data.json', true);
+  }
+  document.getElementById('btn-save').addEventListener('click', saveCurrentJson);
+
+  document.getElementById('btn-save-workspace').addEventListener('click', function() {
+    var ws = {
+      __type: 'json-workspace',
+      __version: 1,
+      savedAt: new Date().toISOString(),
+      data: state.data,
+      expanded: Array.from(state.expanded),
+      schema: state.schema || null,
+      schemaText: schemaInputEl.value,
+      search: searchInputEl.value,
+      savedSnapshot: state.savedSnapshot
+    };
+    var blob = new Blob([JSON.stringify(ws, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'workspace.workspace.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showTemp('✓ 工作区已保存', true);
+  });
+  document.getElementById('btn-open-workspace').addEventListener('click', function(){fileInputEl.click()});
 
   var resizing = false, startY, startHeight;
-  resizer.addEventListener('mousedown', function(e) {
-    resizing = true;
-    resizer.classList.add('active');
+  resizerEl.addEventListener('mousedown', function(e) {
+    resizing = true; resizerEl.classList.add('active');
     startY = e.clientY;
-    var footer = resizer.nextElementSibling;
-    startHeight = footer.offsetHeight;
+    startHeight = resizerEl.nextElementSibling.offsetHeight;
     document.body.style.userSelect = 'none';
   });
   document.addEventListener('mousemove', function(e) {
     if (!resizing) return;
     var delta = startY - e.clientY;
-    var footer = resizer.nextElementSibling;
-    var newHeight = Math.min(Math.max(100, startHeight + delta), window.innerHeight * 0.7);
-    footer.style.height = newHeight + 'px';
+    var footer = resizerEl.nextElementSibling;
+    footer.style.height = Math.min(Math.max(80, startHeight + delta), window.innerHeight * 0.7) + 'px';
   });
   document.addEventListener('mouseup', function() {
-    if (resizing) {
-      resizing = false;
-      resizer.classList.remove('active');
-      document.body.style.userSelect = '';
-    }
+    if (resizing) { resizing = false; resizerEl.classList.remove('active'); document.body.style.userSelect = ''; }
   });
+}
+
+function init() {
+  setData(JSON.parse(JSON.stringify(SAMPLE_JSON)), false);
+  bindEvents();
+  updateHistoryUI();
+  updateUndoRedoButtons();
+  updateIssuesList();
+  updateDiffList();
 }
 
 init();
 })();
 </script>
-
 </body>
 </html>
